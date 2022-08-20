@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from frog_api.models import Project, Version
+from frog_api.models import Entry, Project, Version
 
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
@@ -17,16 +17,14 @@ class VersionSerializer(serializers.HyperlinkedModelSerializer):
 
 class EntrySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = Version
+        model = Entry
         fields = [
-            "version",
             "timestamp",
             "git_hash",
-            "total_functions",
-            "decompiled_functions",
-            "matching_functions",
+            "total_chunks",
+            "decompiled_chunks",
+            "matching_chunks",
             "total_bytes",
             "decompiled_bytes",
             "matching_bytes",
-            "other_data",
         ]
