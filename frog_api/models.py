@@ -20,7 +20,9 @@ class Version(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="versions"
+    )
     slug = models.SlugField(max_length=255)
     name = models.CharField(max_length=255)
 
