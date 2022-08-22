@@ -32,16 +32,18 @@ def get_latest_entry(project, version, category) -> Optional[Entry]:
     ).first()
 
 
+def get_entry_json(entry) -> dict:
+    entry_data = TerseEntrySerializer(entry).data
+    entry_data["measures"] = {m["type"]: m["value"] for m in entry_data["measures"]}
+    return entry_data
+
+
 def get_versions_digest_for_project(project) -> dict:
     versions = {}
     for version in Version.objects.filter(project__slug=project):
         entry = get_latest_entry(project, version.slug, "total")
         if entry is not None:
-            entry_data = TerseEntrySerializer(entry).data
-            entry_data["measures"] = {
-                m["type"]: m["value"] for m in entry_data["measures"]
-            }
-            versions[version.slug] = entry_data
+            versions[version.slug] = get_entry_json(entry)
     return versions
 
 
@@ -74,8 +76,10 @@ class ProjectDigestView(APIView):
         Return the most recent entry for overall progress for each version of a project.
         """
 
-        if Project.objects.get(slug=project) is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        if not Project.objects.filter(slug=project).exists():
+            return Response(
+                f"Project {project} not found", status=status.HTTP_404_NOT_FOUND
+            )
 
         projects = {}
 
@@ -84,3 +88,29 @@ class ProjectDigestView(APIView):
             projects[project] = versions
 
         return Response({"progress": projects})
+
+
+class VersionDigestView(APIView):
+    """
+    API endpoint that returns the most recent entry for a version of a project.
+    """
+
+    def get(self, request, project, version):
+        """
+        Return the most recent entry for overall progress for a version of a project.
+        """
+
+        if not Project.objects.filter(slug=project).exists():
+            return Response(
+                f"Project {project} not found", status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not Version.objects.filter(slug=version, project__slug=project).exists():
+            return Response(
+                f"Version {version} not found", status=status.HTTP_404_NOT_FOUND
+            )
+
+        entry = get_latest_entry(project, version, "total")
+        entry_json = get_entry_json(entry)
+
+        return Response(entry_json)
