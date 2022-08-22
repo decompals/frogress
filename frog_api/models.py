@@ -56,14 +56,6 @@ class Entry(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     git_hash = models.CharField(max_length=40)
-    # Functions / files / whatever you want
-    total_chunks = models.IntegerField()
-    decompiled_chunks = models.IntegerField()
-    matching_chunks = models.IntegerField()
-    # Bytes
-    total_bytes = models.IntegerField()
-    decompiled_bytes = models.IntegerField()
-    matching_bytes = models.IntegerField()
 
     class Meta:
         verbose_name_plural = "Entries"
@@ -71,3 +63,17 @@ class Entry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.category} {self.timestamp}"
+
+
+# A measure (total bytes, bytes matched, functions matched, bytes decompiled, etc) tied to an Entry
+class Measure(models.Model):
+    id = models.AutoField(primary_key=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="measures")
+    type = models.CharField(max_length=255)
+    value = models.IntegerField()
+
+    def __str__(self) -> str:
+        return f"{self.entry} {self.type}: {self.value}"

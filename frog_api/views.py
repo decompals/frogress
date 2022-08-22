@@ -5,7 +5,6 @@ from rest_framework.views import APIView
 
 from frog_api.models import Entry, Project, Version
 from frog_api.serializers import (
-    EntrySerializer,
     ProjectSerializer,
     TerseEntrySerializer,
 )
@@ -38,7 +37,11 @@ def get_versions_digest_for_project(project) -> dict:
     for version in Version.objects.filter(project__slug=project):
         entry = get_latest_entry(project, version.slug, "total")
         if entry is not None:
-            versions[version.slug] = TerseEntrySerializer(entry).data
+            entry_data = TerseEntrySerializer(entry).data
+            entry_data["measures"] = {
+                m["type"]: m["value"] for m in entry_data["measures"]
+            }
+            versions[version.slug] = entry_data
     return versions
 
 
@@ -58,8 +61,6 @@ class RootDigestView(APIView):
             if len(versions) > 0:
                 projects[project.slug] = versions
 
-        entry = get_latest_entry(project=None, version=None, category="total")
-
         return Response({"progress": projects})
 
 
@@ -70,7 +71,7 @@ class ProjectDigestView(APIView):
 
     def get(self, request, project):
         """
-        Return the most recent entry for ovreall progress for each version of a project.
+        Return the most recent entry for overall progress for each version of a project.
         """
 
         if Project.objects.get(slug=project) is None:
@@ -81,7 +82,5 @@ class ProjectDigestView(APIView):
         versions = get_versions_digest_for_project(project)
         if len(versions) > 0:
             projects[project] = versions
-
-        entry = get_latest_entry(project=None, version=None, category="total")
 
         return Response({"progress": projects})

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from frog_api.models import Entry, Project, Version
+from frog_api.models import Entry, Measure, Project, Version
 
 
 class VersionSerializer(serializers.HyperlinkedModelSerializer):
@@ -17,26 +17,30 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
         fields = ["slug", "name", "versions"]
 
 
+class MeasureSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Measure
+        fields = ["type", "value"]
+
+
 class EntrySerializer(serializers.HyperlinkedModelSerializer):
+    measures = MeasureSerializer(many=True)
+
     class Meta:
         model = Entry
         fields = [
             "timestamp",
             "git_hash",
-            "total_chunks",
-            "decompiled_chunks",
-            "matching_chunks",
-            "total_bytes",
-            "decompiled_bytes",
-            "matching_bytes",
+            "measures",
         ]
 
 
 class TerseEntrySerializer(serializers.HyperlinkedModelSerializer):
+    measures = MeasureSerializer(many=True)
+
     class Meta:
         model = Entry
         fields = [
             "timestamp",
-            "total_bytes",
-            "matching_bytes",
+            "measures",
         ]
