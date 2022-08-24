@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "frog_api",
+    "nested_admin",
 ]
 
 MIDDLEWARE = [
