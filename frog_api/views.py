@@ -10,6 +10,10 @@ from frog_api.serializers import (
 )
 
 
+class MissingModelException(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+
+
 class ProjectView(APIView):
     """
     API endpoint that allows projects to be viewed.
@@ -26,22 +30,20 @@ class ProjectView(APIView):
 
 def get_latest_entry(project, version, category) -> dict:
     if not Project.objects.filter(slug=project).exists():
-        raise APIException(
+        raise MissingModelException(
             f"Project {project} not found", code=status.HTTP_404_NOT_FOUND
         )
 
     if not Version.objects.filter(slug=version, project__slug=project).exists():
-        raise APIException(
-            f"Version '{version}' not found for project '{project}'",
-            code=status.HTTP_404_NOT_FOUND,
+        raise MissingModelException(
+            f"Version '{version}' not found for project '{project}'"
         )
 
     if not Category.objects.filter(
         slug=category, version__slug=version, version__project__slug=project
     ).exists():
-        raise APIException(
-            f"Category '{category}' not found for project '{project}' and version '{version}'",
-            code=status.HTTP_404_NOT_FOUND,
+        raise MissingModelException(
+            f"Category '{category}' not found for project '{project}' and version '{version}'"
         )
 
     entry = Entry.objects.filter(
@@ -51,7 +53,9 @@ def get_latest_entry(project, version, category) -> dict:
     ).first()
 
     if entry is None:
-        raise APIException("Entry is None", code=status.HTTP_404_NOT_FOUND)
+        raise MissingModelException(
+            f"No data exists for project '{project}', version '{version}', and category '{category}'"
+        )
 
     # Re-format the measures (TODO: DRF-ify this?)
     entry_data = TerseEntrySerializer(entry).data
@@ -98,9 +102,7 @@ class ProjectDigestView(APIView):
         """
 
         if not Project.objects.filter(slug=project).exists():
-            return Response(
-                f"Project {project} not found", status=status.HTTP_404_NOT_FOUND
-            )
+            raise MissingModelException(f"Project {project} not found")
 
         projects = {}
 
