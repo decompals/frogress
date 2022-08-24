@@ -1,4 +1,17 @@
 from django.db import models
+from django.utils.crypto import get_random_string
+
+AUTH_KEY_LEN = 10
+
+
+def gen_auth_key() -> str:
+    ret = get_random_string(length=AUTH_KEY_LEN)
+
+    if Project.objects.filter(auth_key=ret).exists():
+        return gen_auth_key()
+
+    return ret
+
 
 # Example: OOT
 class Project(models.Model):
@@ -8,7 +21,7 @@ class Project(models.Model):
 
     slug = models.SlugField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
-    auth_key = models.CharField(max_length=255)
+    auth_key = models.CharField(max_length=AUTH_KEY_LEN, default=gen_auth_key)
 
     def __str__(self) -> str:
         return self.slug
