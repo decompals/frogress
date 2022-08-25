@@ -1,0 +1,22 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: frogress
+      POSTGRES_PASSWORD: frogress
+    ports:
+    - "5432:5432"
+    volumes:
+    - ./var/postgres:/var/lib/postgresql/data
+  frogress:
+    build:
+      context: .
+    ports:
+    - "8000:8000"
+  nginx:
+    image: nginx:1.22-alpine
+    ports:
+    - "80:80"
+    volumes:
+    - ./nginx:/etc/nginx/conf.d
