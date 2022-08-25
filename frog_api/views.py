@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, List
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
+from django.db import models
 import json
 
 from frog_api.models import Category, Entry, Measure, Project, Version
@@ -127,12 +128,10 @@ class ProjectDigestView(APIView):
         return Response({"progress": projects})
 
 
-def write_new_entries(request, project, version):
+def write_new_entries(request: Request, project: str, version: str) -> List[Any]:
     found_project = Project.objects.filter(slug=project).first()
     if not found_project:
-        raise MissingModelException(
-            f"Project {project} not found", code=status.HTTP_404_NOT_FOUND
-        )
+        raise MissingModelException(f"Project {project} not found")
 
     found_version = Version.objects.filter(slug=version, project__slug=project).first()
     if not found_version:
@@ -150,7 +149,7 @@ def write_new_entries(request, project, version):
             f"Provided api_key does not match authorization, cannot POST."
         )
 
-    to_save = []
+    to_save: List[models.Model] = []
     for row in input["data"]:
         timestamp = row["timestamp"]
         git_hash = row["git_hash"]
@@ -181,7 +180,7 @@ def write_new_entries(request, project, version):
     for s in to_save:
         s.save()
 
-    return {}
+    return []
 
 
 class VersionDigestView(APIView):
@@ -198,7 +197,7 @@ class VersionDigestView(APIView):
 
         return Response(entry)
 
-    def post(self, request, project, version):
+    def post(self, request: Request, project: str, version: str) -> Response:
 
         result = write_new_entries(request, project, version)
 
@@ -222,12 +221,10 @@ class CategoryDigestView(APIView):
         return Response(entry)
 
 
-def add_new_category(request, project, version):
+def add_new_category(request: Request, project: str, version: str) -> List[Any]:
     found_project = Project.objects.filter(slug=project).first()
     if not found_project:
-        raise MissingModelException(
-            f"Project {project} not found", code=status.HTTP_404_NOT_FOUND
-        )
+        raise MissingModelException(f"Project {project} not found")
 
     found_version = Version.objects.filter(slug=version, project__slug=project).first()
     if not found_version:
@@ -259,7 +256,7 @@ def add_new_category(request, project, version):
     for s in to_save:
         s.save()
 
-    return to_save
+    return []
 
 
 class AddNewCategoryView(APIView):
@@ -267,7 +264,7 @@ class AddNewCategoryView(APIView):
     API endpoint for adding new categories
     """
 
-    def post(self, request, project, version):
+    def post(self, request: Request, project: str, version: str) -> Response:
 
         result = add_new_category(request, project, version)
 

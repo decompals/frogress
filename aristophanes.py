@@ -1,11 +1,10 @@
 #! /usr/bin/env python3
 import argparse
-import collections
 import csv
-from io import BytesIO, FileIO, StringIO
+from io import FileIO, StringIO
 import json
-import subprocess
 import requests
+from typing import Iterable, List, Any, Dict
 
 BASE_URL = "http://127.0.0.1:8000/data"
 
@@ -24,7 +23,7 @@ def make_slug_url(args: argparse.Namespace) -> str:
 
 
 def make_url_options(args: argparse.Namespace) -> str:
-    options = []
+    options: List[str] = []
 
     if args.all:
         options += "all=true"
@@ -42,11 +41,11 @@ def make_url(args: argparse.Namespace) -> str:
     return url
 
 
-def dict_filter(input: list, *keys) -> dict:
-    output: list = []
-    for d in input:
-        output.append(dict((k, d[k]) for k in keys))
-    return output
+# def dict_filter(input: list, *keys) -> dict:
+#     output: list = []
+#     for d in input:
+#         output.append(dict((k, d[k]) for k in keys))
+#     return output
 
 
 fields = [
@@ -111,7 +110,6 @@ extra_fields = [
     "text/debinarised",
     "text/total",
 ]
-extra_filter = []
 
 categories = [
     "default",
@@ -129,33 +127,35 @@ categories = [
 ]
 
 
-def double_csv_to_json(input: FileIO, extra_input: FileIO, output):
+def double_csv_to_json(
+    input: Iterable[str], extra_input: Iterable[str], output: List[Any]
+) -> None:
     csv_reader = csv.DictReader(input, fields)
     extra_csv_reader = csv.DictReader(extra_input, extra_fields)
 
     for row in csv_reader:
-        new_row = {}
+        new_row: Dict[str, Any] = {}
         for field in row:
             measure = str.split(field, "/")
             category = measure[0]
             if category in categories:
                 if category not in new_row:
                     new_row[category] = {}
-                new_row[category][measure[1]] = int(row.get(field))
+                new_row[category][measure[1]] = int(row[field])
             elif category in ["csv_version"]:
                 continue
             elif category in ["git_hash"]:
                 new_row[category] = row.get(field)
             elif category in ["timestamp"]:
-                new_row[category] = int(row.get(field))
+                new_row[category] = int(row[field])
             else:
                 if "default" not in new_row:
                     new_row["default"] = {}
-                new_row["default"][category] = int(row.get(field))
+                new_row["default"][category] = int(row[field])
 
         if extra_input:
             # For brevity this makes assumptions about the categories being present in the primary
-            extra_row = extra_csv_reader.__next__()
+            extra_row: Dict[str, Any] = extra_csv_reader.__next__()
             for field in extra_row:
                 measure = str.split(field, "/")
                 category = measure[0]
@@ -163,7 +163,7 @@ def double_csv_to_json(input: FileIO, extra_input: FileIO, output):
                     if category not in new_row:
                         new_row[category] = {}
                     if measure[1] not in new_row[category]:
-                        new_row[category][measure[1]] = int(extra_row.get(field))
+                        new_row[category][measure[1]] = int(extra_row[field])
                 elif category in ["csv_version", "timestamp", "git_hash"]:
                     continue
                 #     new_row[category] = row.get(field)
@@ -171,7 +171,7 @@ def double_csv_to_json(input: FileIO, extra_input: FileIO, output):
                     if "default" not in new_row:
                         new_row["default"] = {}
                     if category not in new_row["default"]:
-                        new_row["default"][category] = int(extra_row.get(field))
+                        new_row["default"][category] = int(extra_row[field])
 
         output.append(new_row)
 
@@ -283,7 +283,7 @@ def main() -> None:
 
     with StringIO(test_csv_input) as f:
         with StringIO(test_extra_csv_input) as g:
-            output = []
+            output: List[Any] = []
             double_csv_to_json(f, g, output)
             request_body = {"api_key": "2", "data": output}
             string = json.dumps(request_body, indent=4)

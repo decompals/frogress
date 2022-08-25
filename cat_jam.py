@@ -1,11 +1,7 @@
 #! /usr/bin/env python3
 import argparse
-import collections
-import csv
-from io import BytesIO, FileIO, StringIO
-import json
-import subprocess
 import requests
+from typing import List
 
 BASE_URL = "http://127.0.0.1:8000/projects"
 
@@ -24,7 +20,7 @@ def make_slug_url(args: argparse.Namespace) -> str:
 
 
 def make_url_options(args: argparse.Namespace) -> str:
-    options = []
+    options: List[str] = []
 
     ret = str.join("&", options)
     if ret != "":
@@ -55,7 +51,7 @@ categories = [
 ]
 
 
-def main():
+def main() -> None:
     description = "Make categories."
     epilog = ""
 
