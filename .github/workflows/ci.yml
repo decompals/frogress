@@ -18,10 +18,6 @@ jobs:
       - name: Run backend tests
         run: |-
           poetry run python3 manage.py test
-      - name: Migrate backend
-        run: poetry run python3 manage.py migrate
-      - name: Start backend
-        run: poetry run python3 manage.py runserver
   mypy:
     name: mypy
     runs-on: ubuntu-latest
