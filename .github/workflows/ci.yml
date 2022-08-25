@@ -1,0 +1,40 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  full_test_and_build:
+    name: full test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - uses: snok/install-poetry@v1
+      - run: poetry install
+      - name: Run backend tests
+        run: |-
+          poetry run python3 manage.py test
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - uses: snok/install-poetry@v1
+      - run: |-
+          poetry install
+          poetry run mypy
+  black:
+    name: black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+        with:
+          src: "."
