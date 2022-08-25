@@ -52,10 +52,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-REST_FRAMEWORK = {
-    "DATETIME_FORMAT": "%s",
-}
-
 ROOT_URLCONF = "frogress.urls"
 
 TEMPLATES = [
