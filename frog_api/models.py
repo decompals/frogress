@@ -67,7 +67,7 @@ class Entry(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField()
+    timestamp = models.IntegerField()
     git_hash = models.CharField(max_length=40)
 
     class Meta:

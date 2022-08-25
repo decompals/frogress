@@ -240,6 +240,7 @@ def main() -> None:
 
     args = parser.parse_args()
     url = make_url(args)
+    url += "/"
     url += "?format=json"
     print(url)
 
@@ -284,8 +285,9 @@ def main() -> None:
         with StringIO(test_extra_csv_input) as g:
             output = []
             double_csv_to_json(f, g, output)
-            request_body = {"api_key": "capy", "data": output}
+            request_body = {"api_key": "2", "data": output}
             string = json.dumps(request_body, indent=4)
+            print(request_body)
             # for entry in output:
             #     string = json.dumps(entry, indent=4)
             #     print(string)
@@ -298,11 +300,11 @@ def main() -> None:
             # confused_output = {}
             # confuse_dicts(output, confused_output)
             # string = json.dumps(confused_output, indent=4)
-            print(string)
+            # print(string)
 
-    # with requests.post(url, string) as r:
-    #     print(r.status_code)
-    #     print(r.text)
+    with requests.post(url, json=request_body) as r:
+        print(r.status_code)
+        print(r.text)
 
 
 if __name__ == "__main__":

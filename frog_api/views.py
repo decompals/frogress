@@ -4,8 +4,9 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
+import json
 
-from frog_api.models import Category, Entry, Project, Version
+from frog_api.models import Category, Entry, Measure, Project, Version
 from frog_api.serializers import (
     ProjectSerializer,
     TerseEntrySerializer,
@@ -14,6 +15,19 @@ from frog_api.serializers import (
 
 class MissingModelException(APIException):
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class InvalidAPIKeyException(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+
+
+class InvalidDataException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+
+
+# Maybe?
+class AlreadyExistsException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
 
 
 class ProjectView(APIView):
@@ -66,7 +80,7 @@ def get_latest_entry(project: str, version: str, category: str) -> dict[Any, Any
 def get_versions_digest_for_project(project: str) -> dict[Any, Any]:
     versions = {}
     for version in Version.objects.filter(project__slug=project):
-        entry = get_latest_entry(project, version.slug, "total")
+        entry = get_latest_entry(project, version.slug, "default")
         if entry is not None:
             versions[version.slug] = entry
     return versions
@@ -113,6 +127,63 @@ class ProjectDigestView(APIView):
         return Response({"progress": projects})
 
 
+def write_new_entries(request, project, version):
+    found_project = Project.objects.filter(slug=project).first()
+    if not found_project:
+        raise MissingModelException(
+            f"Project {project} not found", code=status.HTTP_404_NOT_FOUND
+        )
+
+    found_version = Version.objects.filter(slug=version, project__slug=project).first()
+    if not found_version:
+        raise MissingModelException(
+            f"Version '{version}' not found for project '{project}'"
+        )
+
+    print(request.data)
+    input = request.data
+
+    if "api_key" not in input:
+        raise InvalidAPIKeyException(f"No api_key provided, cannot POST.")
+    if input["api_key"] != found_project.auth_key:
+        raise InvalidAPIKeyException(
+            f"Provided api_key does not match authorization, cannot POST."
+        )
+
+    to_save = []
+    for row in input["data"]:
+        timestamp = row["timestamp"]
+        git_hash = row["git_hash"]
+        for cat in row:
+            if cat in ["timestamp", "git_hash"]:
+                continue
+            if type(row[cat]) is not dict:
+                continue
+
+            category = Category.objects.filter(
+                slug=cat, version__slug=version, version__project__slug=project
+            ).first()
+            if not category:
+                raise MissingModelException(
+                    f"Attempted to write to Category '{cat}' not found in project '{project}', version '{version}'"
+                )
+
+            entry = Entry(category=category, timestamp=timestamp, git_hash=git_hash)
+            print(entry)
+            to_save.append(entry)
+
+            for measure_type in row[cat]:
+                value = row[cat][measure_type]
+                if type(value) != int:
+                    raise InvalidDataException(f"{cat}:{measure_type} must be an int")
+                to_save.append(Measure(entry=entry, type=measure_type, value=value))
+
+    for s in to_save:
+        s.save()
+
+    return {}
+
+
 class VersionDigestView(APIView):
     """
     API endpoint that returns the most recent entry for overall progress for a version of a project.
@@ -123,9 +194,15 @@ class VersionDigestView(APIView):
         Return the most recent entry for overall progress for a version of a project.
         """
 
-        entry = get_latest_entry(project, version, "total")
+        entry = get_latest_entry(project, version, "default")
 
         return Response(entry)
+
+    def post(self, request, project, version):
+
+        result = write_new_entries(request, project, version)
+
+        return Response(result, status=status.HTTP_201_CREATED)
 
 
 class CategoryDigestView(APIView):
@@ -143,3 +220,55 @@ class CategoryDigestView(APIView):
         entry = get_latest_entry(project, version, category)
 
         return Response(entry)
+
+
+def add_new_category(request, project, version):
+    found_project = Project.objects.filter(slug=project).first()
+    if not found_project:
+        raise MissingModelException(
+            f"Project {project} not found", code=status.HTTP_404_NOT_FOUND
+        )
+
+    found_version = Version.objects.filter(slug=version, project__slug=project).first()
+    if not found_version:
+        raise MissingModelException(
+            f"Version '{version}' not found for project '{project}'"
+        )
+
+    print(request.data)
+    input = request.data
+    categories = input["data"]
+
+    if "api_key" not in input:
+        raise InvalidAPIKeyException(f"No api_key provided, cannot POST.")
+    if input["api_key"] != found_project.auth_key:
+        raise InvalidAPIKeyException(
+            f"Provided api_key does not match authorization, cannot POST."
+        )
+
+    to_save = []
+    for cat in categories:
+        if Category.objects.filter(
+            slug=cat, version__slug=version, version__project__slug=project
+        ).exists():
+            raise AlreadyExistsException(
+                f"Category {cat} already exists for project '{project}', version '{version}'"
+            )
+        to_save.append(Category(version=found_version, slug=cat, name=categories[cat]))
+
+    for s in to_save:
+        s.save()
+
+    return to_save
+
+
+class AddNewCategoryView(APIView):
+    """
+    API endpoint for adding new categories
+    """
+
+    def post(self, request, project, version):
+
+        result = add_new_category(request, project, version)
+
+        return Response(result, status=status.HTTP_201_CREATED)
