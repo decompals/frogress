@@ -1,26 +1,31 @@
 from django.urls import path, re_path
-from frog_api import views
+from frog_api.views import data, structure
 
 urlpatterns = [
-    path("projects/", views.ProjectView.as_view()),
-    re_path(
-        "projects/(?P<project>.+)/(?P<version>.+)/$",
-        views.AddNewCategoryView.as_view(),
+    # structure (/project)
+    path(
+        "projects/",
+        structure.ProjectStructureView.as_view(),
     ),
     re_path(
-        "data/(?P<project>.+)/(?P<version>.+)/(?P<category>.+)/$",
-        views.CategoryDigestView.as_view(),
+        "projects/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
+        structure.CategoryStructureView.as_view(),
+    ),
+    # data (/data)
+    re_path(
+        "data/(?P<project_slug>.+)/(?P<version_slug>.+)/(?P<category_slug>.+)/$",
+        data.CategoryDataView.as_view(),
     ),
     re_path(
-        "data/(?P<project>.+)/(?P<version>.+)/$",
-        views.VersionDigestView.as_view(),
+        "data/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
+        data.VersionDataView.as_view(),
     ),
     re_path(
-        "data/(?P<project>.+)/$",
-        views.ProjectDigestView.as_view(),
+        "data/(?P<project_slug>.+)/$",
+        data.ProjectDataView.as_view(),
     ),
     path(
         "data/",
-        views.RootDigestView.as_view(),
+        data.RootDataView.as_view(),
     ),
 ]
