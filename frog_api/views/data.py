@@ -1,20 +1,28 @@
 from typing import Any, List
 
 from django.db import models
-from frog_api.exceptions import *
+from frog_api.exceptions import (
+    InvalidDataException,
+    MissingAPIKeyException,
+    NoEntriesException,
+)
 from frog_api.models import Entry, Measure, Project, Version
 from frog_api.serializers import TerseEntrySerializer
+from frog_api.views.common import (
+    get_category,
+    get_project,
+    get_version,
+    validate_api_key,
+)
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common import get_category, get_project, get_version
-
 
 def get_latest_entry(
     project_slug: str, version_slug: str, category_slug: str
-) -> dict[Any, Any]:
+) -> dict[str, Any]:
     project = get_project(project_slug)
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
@@ -24,7 +32,7 @@ def get_latest_entry(
     if entry is None:
         raise NoEntriesException(project_slug, version_slug, category_slug)
 
-    # Re-format the measures (TODO: DRF-ify this?)
+    # Re-format the measures (TODO: handle this in a DRF serializer)
     entry_data = TerseEntrySerializer(entry).data
     entry_data["measures"] = {m["type"]: m["value"] for m in entry_data["measures"]}
     return entry_data
@@ -85,7 +93,7 @@ class VersionDataView(APIView):
     """
 
     @staticmethod
-    def write_new_entries(
+    def create_entries(
         req_data: dict[str, Any], project_slug: str, version_slug: str
     ) -> int:
         project = get_project(project_slug)
@@ -93,8 +101,8 @@ class VersionDataView(APIView):
 
         if "api_key" not in req_data:
             raise MissingAPIKeyException()
-        if req_data["api_key"] != project.auth_key:
-            raise InvalidAPIKeyException()
+
+        validate_api_key(req_data["api_key"], project)
 
         to_save: List[models.Model] = []
         for entry in req_data["data"]:
@@ -125,18 +133,20 @@ class VersionDataView(APIView):
 
         return len(to_save)
 
-    def get(self, request: Request, project: str, version: str) -> Response:
+    def get(self, request: Request, project_slug: str, version_slug: str) -> Response:
         """
         Return the most recent entry for overall progress for a version of a project.
         """
 
-        entry = get_latest_entry(project, version, "default")
+        entry = get_latest_entry(project_slug, version_slug, "default")
 
         return Response(entry)
 
-    def post(self, request: Request, project: str, version: str) -> Response:
+    def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
 
-        result = VersionDataView.write_new_entries(request.data, project, version)
+        result = VersionDataView.create_entries(
+            request.data, project_slug, version_slug
+        )
 
         success_data = {
             "result": "success",
@@ -152,12 +162,12 @@ class CategoryDataView(APIView):
     """
 
     def get(
-        self, request: Request, project: str, version: str, category: str
+        self, request: Request, project_slug: str, version_slug: str, category_slug: str
     ) -> Response:
         """
         Return data for a specific cagory and a version of a project.
         """
 
-        entry = get_latest_entry(project, version, category)
+        entry = get_latest_entry(project_slug, version_slug, category_slug)
 
         return Response(entry)

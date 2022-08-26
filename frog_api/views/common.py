@@ -1,4 +1,5 @@
 from frog_api.exceptions import (
+    InvalidAPIKeyException,
     NonexistentCategoryException,
     NonexistentProjectException,
     NonexistentVersionException,
@@ -25,3 +26,9 @@ def get_category(slug: str, version: Version) -> Category:
     if not ret:
         raise NonexistentCategoryException(version.project.slug, version.slug, slug)
     return ret
+
+
+def validate_api_key(key: str, project: Project) -> bool:
+    if key != project.auth_key:
+        raise InvalidAPIKeyException()
+    return True

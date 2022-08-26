@@ -1,15 +1,14 @@
-from typing import Any, List
+from typing import Any
 
 from django.db import models
-from frog_api.exceptions import *
+from frog_api.exceptions import AlreadyExistsException, MissingAPIKeyException
 from frog_api.models import Category, Project
 from frog_api.serializers import ProjectSerializer
+from frog_api.views.common import get_project, get_version, validate_api_key
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from common import get_project, get_version
 
 
 class ProjectStructureView(APIView):
@@ -34,22 +33,20 @@ class CategoryStructureView(APIView):
     @staticmethod
     def create_categories(
         req_data: dict[str, Any], project_slug: str, version_slug: str
-    ) -> List[Any]:
+    ) -> int:
         project = get_project(project_slug)
         version = get_version(version_slug, project)
 
         if "api_key" not in req_data:
             raise MissingAPIKeyException()
-        if req_data["api_key"] != project.auth_key:
-            raise InvalidAPIKeyException()
+
+        validate_api_key(req_data["api_key"], project)
 
         categories = req_data["data"]
 
         to_save: list[models.Model] = []
         for cat in categories:
-            if Category.objects.filter(
-                slug=cat, version=version, version__project=project
-            ).exists():
+            if Category.objects.filter(slug=cat, version=version).exists():
                 raise AlreadyExistsException(
                     f"Category {cat} already exists for project '{project_slug}', version '{version_slug}'"
                 )
@@ -58,10 +55,15 @@ class CategoryStructureView(APIView):
         for s in to_save:
             s.save()
 
-        return []
+        return len(to_save)
 
     def post(self, request: Request, project: str, version: str) -> Response:
 
         result = CategoryStructureView.create_categories(request.data, project, version)
 
-        return Response(result, status=status.HTTP_201_CREATED)
+        success_data = {
+            "result": "success",
+            "wrote": result,
+        }
+
+        return Response(success_data, status=status.HTTP_201_CREATED)
