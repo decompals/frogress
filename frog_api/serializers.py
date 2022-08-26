@@ -14,7 +14,14 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Project
-        fields = ["slug", "name", "versions"]
+        fields = [
+            "slug",
+            "name",
+            "versions",
+            "repository",
+            "discord",
+            "website",
+        ]
 
 
 class MeasureSerializer(serializers.HyperlinkedModelSerializer):
