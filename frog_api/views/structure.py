@@ -57,9 +57,10 @@ class CategoryStructureView(APIView):
 
         return len(to_save)
 
-    def post(self, request: Request, project: str, version: str) -> Response:
-
-        result = CategoryStructureView.create_categories(request.data, project, version)
+    def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
+        result = CategoryStructureView.create_categories(
+            request.data, project_slug, version_slug
+        )
 
         success_data = {
             "result": "success",

@@ -8,20 +8,20 @@ urlpatterns = [
         structure.ProjectStructureView.as_view(),
     ),
     re_path(
-        "projects/(?P<project>.+)/(?P<version>.+)/$",
+        "projects/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
         structure.CategoryStructureView.as_view(),
     ),
     # data (/data)
     re_path(
-        "data/(?P<project>.+)/(?P<version>.+)/(?P<category>.+)/$",
+        "data/(?P<project_slug>.+)/(?P<version_slug>.+)/(?P<category_slug>.+)/$",
         data.CategoryDataView.as_view(),
     ),
     re_path(
-        "data/(?P<project>.+)/(?P<version>.+)/$",
+        "data/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
         data.VersionDataView.as_view(),
     ),
     re_path(
-        "data/(?P<project>.+)/$",
+        "data/(?P<project_slug>.+)/$",
         data.ProjectDataView.as_view(),
     ),
     path(
