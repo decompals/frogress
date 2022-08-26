@@ -22,6 +22,9 @@ class Project(models.Model):
     slug = models.SlugField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     auth_key = models.CharField(max_length=AUTH_KEY_LEN, default=gen_auth_key)
+    repository = models.URLField(null=True, blank=True)
+    discord = models.URLField(null=True, blank=True)
+    website = models.URLField(null=True, blank=True)
 
     def __str__(self) -> str:
         return self.slug
