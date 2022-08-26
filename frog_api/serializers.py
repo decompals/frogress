@@ -24,23 +24,15 @@ class MeasureSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class EntrySerializer(serializers.HyperlinkedModelSerializer):
-    measures = MeasureSerializer(many=True)
+    measures = serializers.SerializerMethodField()
+
+    def get_measures(self, instance: Entry) -> dict[str, int]:
+        return {m.type: m.value for m in instance.measures.all()}
 
     class Meta:
         model = Entry
         fields = [
             "timestamp",
             "git_hash",
-            "measures",
-        ]
-
-
-class TerseEntrySerializer(serializers.HyperlinkedModelSerializer):
-    measures = MeasureSerializer(many=True)
-
-    class Meta:
-        model = Entry
-        fields = [
-            "timestamp",
             "measures",
         ]
