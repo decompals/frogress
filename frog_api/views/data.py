@@ -7,7 +7,7 @@ from frog_api.exceptions import (
     NoEntriesException,
 )
 from frog_api.models import Entry, Measure, Project, Version
-from frog_api.serializers import TerseEntrySerializer
+from frog_api.serializers import EntrySerializer
 from frog_api.views.common import (
     get_category,
     get_project,
@@ -32,10 +32,7 @@ def get_latest_entry(
     if entry is None:
         raise NoEntriesException(project_slug, version_slug, category_slug)
 
-    # Re-format the measures (TODO: handle this in a DRF serializer)
-    entry_data = TerseEntrySerializer(entry).data
-    entry_data["measures"] = {m["type"]: m["value"] for m in entry_data["measures"]}
-    return entry_data
+    return EntrySerializer(entry).data
 
 
 def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
