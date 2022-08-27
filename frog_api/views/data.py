@@ -1,13 +1,13 @@
-from typing import Any, List
+from typing import Any
 
 from django.db import models
 from frog_api.exceptions import (
     InvalidDataException,
-    MissingAPIKeyException,
     NoEntriesException,
 )
 from frog_api.models import Entry, Measure, Project, Version
 from frog_api.serializers.model_serializers import EntrySerializer
+from frog_api.serializers.request_serializers import CreateEntriesSerializer
 from frog_api.views.common import (
     get_category,
     get_project,
@@ -93,32 +93,30 @@ class VersionDataView(APIView):
     def create_entries(
         req_data: dict[str, Any], project_slug: str, version_slug: str
     ) -> int:
+        request_ser = CreateEntriesSerializer(data=req_data)
+        request_ser.is_valid(raise_exception=True)
+        data = request_ser.data
+
         project = get_project(project_slug)
+
+        validate_api_key(data["api_key"], project)
+
         version = get_version(version_slug, project)
 
-        if "api_key" not in req_data:
-            raise MissingAPIKeyException()
-
-        validate_api_key(req_data["api_key"], project)
-
-        to_save: List[models.Model] = []
-        for entry in req_data["data"]:
+        to_save: list[models.Model] = []
+        for entry in data["entries"]:
             timestamp = entry["timestamp"]
             git_hash = entry["git_hash"]
-            for cat in entry:
-                if cat in ["timestamp", "git_hash"]:
-                    continue
-                if type(entry[cat]) is not dict:
-                    continue
-
+            categories = entry["categories"]
+            for cat in categories:
                 category = get_category(cat, version)
 
                 entry = Entry(category=category, timestamp=timestamp, git_hash=git_hash)
 
                 to_save.append(entry)
 
-                for measure_type in entry[cat]:
-                    value = entry[cat][measure_type]
+                for measure_type in categories[cat]:
+                    value = categories[cat][measure_type]
                     if type(value) != int:
                         raise InvalidDataException(
                             f"{cat}:{measure_type} must be an integer"

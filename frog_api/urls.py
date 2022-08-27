@@ -20,6 +20,7 @@ urlpatterns = [
     re_path(
         "data/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
         data.VersionDataView.as_view(),
+        name="version-data",
     ),
     re_path(
         "data/(?P<project_slug>.+)/$",

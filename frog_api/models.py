@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from django.utils.crypto import get_random_string
 
@@ -78,7 +79,10 @@ class Entry(models.Model):
         ordering = ["-timestamp"]
 
     def __str__(self) -> str:
-        return f"{self.category} {self.timestamp}"
+        time_string = datetime.utcfromtimestamp(self.timestamp).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        return f"{self.category} {time_string}"
 
 
 # A measure (total bytes, bytes matched, functions matched, bytes decompiled, etc) tied to an Entry
