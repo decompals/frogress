@@ -6,7 +6,7 @@ on:
   pull_request:
 jobs:
   full_test_and_build:
-    name: full test and build
+    name: unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

@@ -1,9 +1,10 @@
 from typing import Any
 
 from django.db import models
-from frog_api.exceptions import AlreadyExistsException, MissingAPIKeyException
+from frog_api.exceptions import AlreadyExistsException
 from frog_api.models import Category, Project
-from frog_api.serializers import ProjectSerializer
+from frog_api.serializers.model_serializers import ProjectSerializer
+from frog_api.serializers.request_serializers import CreateCategoriesSerializer
 from frog_api.views.common import get_project, get_version, validate_api_key
 from rest_framework import status
 from rest_framework.request import Request
@@ -34,23 +35,25 @@ class CategoryStructureView(APIView):
     def create_categories(
         req_data: dict[str, Any], project_slug: str, version_slug: str
     ) -> int:
+        request_ser = CreateCategoriesSerializer(data=req_data)
+        request_ser.is_valid(raise_exception=True)
+        data = request_ser.data
+
         project = get_project(project_slug)
+
+        validate_api_key(request_ser.data["api_key"], project)
+
         version = get_version(version_slug, project)
 
-        if "api_key" not in req_data:
-            raise MissingAPIKeyException()
-
-        validate_api_key(req_data["api_key"], project)
-
-        categories = req_data["data"]
+        categories: dict[str, str] = data["categories"]
 
         to_save: list[models.Model] = []
-        for cat in categories:
+        for cat, name in categories.items():
             if Category.objects.filter(slug=cat, version=version).exists():
                 raise AlreadyExistsException(
                     f"Category {cat} already exists for project '{project_slug}', version '{version_slug}'"
                 )
-            to_save.append(Category(version=version, slug=cat, name=categories[cat]))
+            to_save.append(Category(version=version, slug=cat, name=name))
 
         for s in to_save:
             s.save()
