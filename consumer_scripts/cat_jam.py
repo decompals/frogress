@@ -74,7 +74,9 @@ def main() -> None:
     for cat in categories:
         request_data[cat] = cat.capitalize()
 
-    request_json = {"api_key": "2", "data": request_data}
+    request_json = {"api_key": "2", "categories": request_data}
+
+    print(request_json)
 
     with requests.post(url, json=request_json) as r:
         print(r.status_code)

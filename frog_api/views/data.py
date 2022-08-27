@@ -7,7 +7,7 @@ from frog_api.exceptions import (
     NoEntriesException,
 )
 from frog_api.models import Entry, Measure, Project, Version
-from frog_api.serializers import EntrySerializer
+from frog_api.serializers.model_serializers import EntrySerializer
 from frog_api.views.common import (
     get_category,
     get_project,

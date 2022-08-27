@@ -10,6 +10,7 @@ urlpatterns = [
     re_path(
         "projects/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
         structure.CategoryStructureView.as_view(),
+        name="category-structure",
     ),
     # data (/data)
     re_path(
