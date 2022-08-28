@@ -38,6 +38,18 @@ def get_latest_entry(
     return EntrySerializer(entry).data
 
 
+def get_all_entries(
+    project_slug: str, version_slug: str, category_slug: str
+) -> list[dict[str, Any]]:
+    project = get_project(project_slug)
+    version = get_version(version_slug, project)
+    category = get_category(category_slug, version)
+
+    entries = Entry.objects.filter(category=category)
+
+    return EntrySerializer(entries, many=True).data  # type: ignore
+
+
 def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
     versions = {}
     for version in Version.objects.filter(project=project):
@@ -132,9 +144,13 @@ class VersionDataView(APIView):
 
         category_slug = DEFAULT_CATEGORY_SLUG
 
-        entry = get_latest_entry(project_slug, version_slug, category_slug)
+        mode = self.request.query_params.get("mode", "latest")
+        if mode == "latest":
+            entries = [get_latest_entry(project_slug, version_slug, category_slug)]
+        elif mode == "all":
+            entries = get_all_entries(project_slug, version_slug, category_slug)
 
-        response_json = {project_slug: {version_slug: {category_slug: [entry]}}}
+        response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
         return Response(response_json)
 
@@ -164,8 +180,12 @@ class CategoryDataView(APIView):
         Return data for a specific category and a version of a project.
         """
 
-        entry = get_latest_entry(project_slug, version_slug, category_slug)
+        mode = self.request.query_params.get("mode", "latest")
+        if mode == "latest":
+            entries = [get_latest_entry(project_slug, version_slug, category_slug)]
+        elif mode == "all":
+            entries = get_all_entries(project_slug, version_slug, category_slug)
 
-        response_json = {project_slug: {version_slug: {category_slug: [entry]}}}
+        response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
         return Response(response_json)
