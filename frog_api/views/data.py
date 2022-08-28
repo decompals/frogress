@@ -93,6 +93,35 @@ class ProjectDataView(APIView):
         return Response({project_slug: versions})
 
 
+def get_progress_shield(
+    request: Request, project_slug: str, version_slug: str
+) -> dict[str, Any]:
+    latest = get_latest_entry(project_slug, version_slug, "default")
+
+    params = request.content_params
+    if not params:
+        raise InvalidDataException("No measure or total specified")
+
+    measure = params["measure"]
+    if measure:
+        numerator = latest[measure]
+    else:
+        raise InvalidDataException("No measure specified")
+    total = params["total"]
+    if total:
+        denominator = latest[total]
+    else:
+        raise InvalidDataException("No total specified")
+
+    fraction = float(numerator) / float(denominator)
+    message = f"{fraction:0.1%}"
+    color = params["color"]
+    if not color:
+        color = "yellow" if fraction < 1.0 else "green"
+
+    return {"schemaVersion": 1, "label": "progress", "message": message, "color": color}
+
+
 class VersionDataView(APIView):
     """
     API endpoint that returns data for overall progress for a version of a project.
