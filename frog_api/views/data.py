@@ -25,7 +25,7 @@ DEFAULT_CATEGORY_NAME = "Default"
 
 def get_latest_entry(
     project_slug: str, version_slug: str, category_slug: str
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     project = get_project(project_slug)
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
@@ -35,7 +35,7 @@ def get_latest_entry(
     if entry is None:
         raise NoEntriesException(project_slug, version_slug, category_slug)
 
-    return EntrySerializer(entry).data
+    return [EntrySerializer(entry).data]
 
 
 def get_all_entries(
@@ -56,7 +56,7 @@ def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
         category_slug = DEFAULT_CATEGORY_SLUG
         entry = get_latest_entry(project.slug, version.slug, category_slug)
         if entry is not None:
-            versions[version.slug] = {"default": [entry]}
+            versions[version.slug] = {"default": entry}
     return versions
 
 
@@ -95,7 +95,7 @@ class ProjectDataView(APIView):
 
 class VersionDataView(APIView):
     """
-    API endpoint that returns the most recent entry for overall progress for a version of a project.
+    API endpoint that returns data for overall progress for a version of a project.
     """
 
     @staticmethod
@@ -146,7 +146,7 @@ class VersionDataView(APIView):
 
         mode = self.request.query_params.get("mode", "latest")
         if mode == "latest":
-            entries = [get_latest_entry(project_slug, version_slug, category_slug)]
+            entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
             entries = get_all_entries(project_slug, version_slug, category_slug)
 
@@ -182,7 +182,7 @@ class CategoryDataView(APIView):
 
         mode = self.request.query_params.get("mode", "latest")
         if mode == "latest":
-            entries = [get_latest_entry(project_slug, version_slug, category_slug)]
+            entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
             entries = get_all_entries(project_slug, version_slug, category_slug)
 

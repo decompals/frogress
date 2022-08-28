@@ -5,6 +5,7 @@ from frog_api.exceptions import (
     NonexistentVersionException,
 )
 from frog_api.models import Category, Project, Version
+from frogress.settings import ULTIMATE_API_KEY
 
 
 def get_project(slug: str) -> Project:
@@ -29,6 +30,7 @@ def get_category(slug: str, version: Version) -> Category:
 
 
 def validate_api_key(key: str, project: Project) -> bool:
-    if key != project.auth_key:
+    if key == ULTIMATE_API_KEY or key == project.auth_key:
+        return True
+    else:
         raise InvalidAPIKeyException()
-    return True
