@@ -19,6 +19,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+DEFAULT_CATEGORY_SLUG = "default"
+DEFAULT_CATEGORY_NAME = "Default"
+
 
 def get_latest_entry(
     project_slug: str, version_slug: str, category_slug: str
@@ -38,9 +41,10 @@ def get_latest_entry(
 def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
     versions = {}
     for version in Version.objects.filter(project=project):
-        entry = get_latest_entry(project.slug, version.slug, "default")
+        category_slug = DEFAULT_CATEGORY_SLUG
+        entry = get_latest_entry(project.slug, version.slug, category_slug)
         if entry is not None:
-            versions[version.slug] = entry
+            versions[version.slug] = {"default": [entry]}
     return versions
 
 
@@ -56,11 +60,9 @@ class RootDataView(APIView):
 
         projects = {}
         for project in Project.objects.all():
-            versions = get_versions_digest_for_project(project)
-            if len(versions) > 0:
-                projects[project.slug] = versions
+            projects[project.slug] = get_versions_digest_for_project(project)
 
-        return Response({"progress": projects})
+        return Response(projects)
 
 
 class ProjectDataView(APIView):
@@ -76,12 +78,7 @@ class ProjectDataView(APIView):
         project = get_project(project_slug)
         versions = get_versions_digest_for_project(project)
 
-        projects = {}
-
-        if len(versions) > 0:
-            projects[project_slug] = versions
-
-        return Response({"progress": projects})
+        return Response({project_slug: versions})
 
 
 class VersionDataView(APIView):
@@ -133,9 +130,13 @@ class VersionDataView(APIView):
         Return the most recent entry for overall progress for a version of a project.
         """
 
-        entry = get_latest_entry(project_slug, version_slug, "default")
+        category_slug = DEFAULT_CATEGORY_SLUG
 
-        return Response(entry)
+        entry = get_latest_entry(project_slug, version_slug, category_slug)
+
+        response_json = {project_slug: {version_slug: {category_slug: [entry]}}}
+
+        return Response(response_json)
 
     def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
 
@@ -153,16 +154,18 @@ class VersionDataView(APIView):
 
 class CategoryDataView(APIView):
     """
-    API endpoint that returns data for a specific cagory and a version of a project.
+    API endpoint that returns data for a specific category and a version of a project.
     """
 
     def get(
         self, request: Request, project_slug: str, version_slug: str, category_slug: str
     ) -> Response:
         """
-        Return data for a specific cagory and a version of a project.
+        Return data for a specific category and a version of a project.
         """
 
         entry = get_latest_entry(project_slug, version_slug, category_slug)
 
-        return Response(entry)
+        response_json = {project_slug: {version_slug: {category_slug: [entry]}}}
+
+        return Response(response_json)
