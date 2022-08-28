@@ -27,7 +27,7 @@ class CreateCategoriesTests(APITestCase):
         version.save()
 
         response = self.client.post(
-            reverse("category-structure", args=[project.slug, version.slug]),
+            reverse("version-structure", args=[project.slug, version.slug]),
             create_json,
             format="json",
         )

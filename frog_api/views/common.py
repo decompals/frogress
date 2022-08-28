@@ -29,6 +29,13 @@ def get_category(slug: str, version: Version) -> Category:
     return ret
 
 
+def validate_ultimate_api_key(key: str) -> bool:
+    if key == ULTIMATE_API_KEY:
+        return True
+    else:
+        raise InvalidAPIKeyException()
+
+
 def validate_api_key(key: str, project: Project) -> bool:
     if key == ULTIMATE_API_KEY or key == project.auth_key:
         return True

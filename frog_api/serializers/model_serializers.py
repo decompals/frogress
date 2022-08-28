@@ -10,7 +10,7 @@ class VersionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
-    versions = VersionSerializer(many=True)
+    versions = VersionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Project
