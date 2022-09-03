@@ -3,7 +3,7 @@
 BE_HOST=${BACKEND_HOST:-frogress}
 BE_PORT=${BACKEND_PORT:-8000}
 
-CADDY_DOMAIN=${DOMAIN_NAME:-frogress.deco.mp}
+CADDY_DOMAIN=${DOMAIN_NAME:-progress.deco.mp}
 
 IS_PROD=${PRODUCTION:-YES}
 
