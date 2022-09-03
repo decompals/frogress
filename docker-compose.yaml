@@ -8,15 +8,18 @@ services:
     ports:
     - "5432:5432"
     volumes:
-    - ./var/postgres:/var/lib/postgresql/data
+    - ./deployment/postgres/data:/var/lib/postgresql/data
   frogress:
     build:
       context: .
+      dockerfile: deployment/frogress/Dockerfile
     ports:
     - "8000:8000"
-  nginx:
-    image: nginx:1.22-alpine
+  caddy:
+    env_file: caddy.env
+    build:
+      context: .
+      dockerfile: deployment/caddy/Dockerfile
     ports:
     - "80:80"
-    volumes:
-    - ./nginx:/etc/nginx/conf.d
+    - "443:443"

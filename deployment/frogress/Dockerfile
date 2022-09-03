@@ -11,7 +11,16 @@ RUN echo 'export PATH="/etc/poetry/bin:$PATH"' > /root/.bashrc
 
 RUN mkdir /frogress
 
-COPY . /frogress
+COPY consumer_scripts /frogress/consumer_scripts
+COPY frog_api /frogress/frog_api
+COPY frogress /frogress/frogress
+
+COPY manage.py /frogress/
+COPY mypy.ini /frogress/
+COPY poetry.lock /frogress/
+COPY pyproject.toml /frogress/
+
+COPY ./deployment/frogress/entrypoint.sh /entrypoint.sh
 
 WORKDIR /frogress
 
@@ -19,4 +28,6 @@ ENV PATH="$PATH:/etc/poetry/bin"
 
 RUN poetry install
 
-ENTRYPOINT ["/frogress/docker_entrypoint.sh"]
+COPY .env /frogress
+
+ENTRYPOINT ["/entrypoint.sh"]

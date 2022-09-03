@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DB_HOST=${DATABASE_HOST:-postgres}
 DB_PORT=${DATABASE_PORT:-5432}
