@@ -1,0 +1,25 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: frogress
+      POSTGRES_PASSWORD: frogress
+    ports:
+    - "5432:5432"
+    volumes:
+    - ./deployment/postgres/data:/var/lib/postgresql/data
+  frogress:
+    build:
+      context: .
+      dockerfile: deployment/frogress/Dockerfile
+    ports:
+    - "8000:8000"
+  caddy:
+    env_file: caddy.env
+    build:
+      context: .
+      dockerfile: deployment/caddy/Dockerfile
+    ports:
+    - "80:80"
+    - "443:443"
