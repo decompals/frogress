@@ -7,8 +7,8 @@ BE_HOST=${BACKEND_HOST:-frogress}
 BE_PORT=${BACKEND_PORT:-8000}
 
 until nc -z ${DB_HOST} ${DB_PORT} > /dev/null; do
-  echo "Waiting for database to become available on ${DB_HOST}:${DB_PORT}..."
-  sleep 1
+    echo "Waiting for database to become available on ${DB_HOST}:${DB_PORT}..."
+    sleep 1
 done
 
 poetry run python manage.py migrate

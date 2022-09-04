@@ -8,8 +8,8 @@ CADDY_DOMAIN=${DOMAIN_NAME:-progress.deco.mp}
 IS_PROD=${PRODUCTION:-YES}
 
 until nc -z ${BE_HOST} ${BE_PORT} > /dev/null; do
-  echo "Waiting for backend to become available on ${BE_HOST}:${BE_PORT}..."
-  sleep 1
+    echo "Waiting for backend to become available on ${BE_HOST}:${BE_PORT}..."
+    sleep 1
 done
 
 if [[ "${IS_PROD}" == "YES" ]]; then
