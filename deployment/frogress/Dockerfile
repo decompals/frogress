@@ -20,8 +20,6 @@ COPY mypy.ini /frogress/
 COPY poetry.lock /frogress/
 COPY pyproject.toml /frogress/
 
-COPY ./deployment/frogress/entrypoint.sh /entrypoint.sh
-
 WORKDIR /frogress
 
 ENV PATH="$PATH:/etc/poetry/bin"
@@ -29,5 +27,7 @@ ENV PATH="$PATH:/etc/poetry/bin"
 RUN poetry install
 
 COPY .env /frogress
+
+COPY ./deployment/frogress/entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

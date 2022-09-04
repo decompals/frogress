@@ -4,3 +4,4 @@ __pycache__
 .DS_Store
 .env.*
 db.sqlite3
+caddy.env

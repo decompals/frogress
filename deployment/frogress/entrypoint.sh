@@ -3,7 +3,7 @@
 DB_HOST=${DATABASE_HOST:-postgres}
 DB_PORT=${DATABASE_PORT:-5432}
 
-BE_HOST=${BACKEND_HOST:-0.0.0.0}
+BE_HOST=${BACKEND_HOST:-frogress}
 BE_PORT=${BACKEND_PORT:-8000}
 
 until nc -z ${DB_HOST} ${DB_PORT} > /dev/null; do
