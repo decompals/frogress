@@ -94,32 +94,47 @@ class ProjectDataView(APIView):
 
 
 def get_progress_shield(
-    request: Request, project_slug: str, version_slug: str
+    request: Request, project_slug: str, version_slug: str, category_slug: str
 ) -> dict[str, Any]:
     latest = get_latest_entry(project_slug, version_slug, "default")
 
-    params = request.content_params
+    project = get_project(project_slug)
+    version = get_version(version_slug, project)
+    category = get_category(category_slug, version)
+
+    params = request.query_params
     if not params:
         raise InvalidDataException("No measure or total specified")
 
-    measure = params["measure"]
-    if measure:
-        numerator = latest[measure]
-    else:
+    try:
+        measure = params["measure"]
+        numerator = latest[0]["measures"][measure]
+    except:
         raise InvalidDataException("No measure specified")
-    total = params["total"]
-    if total:
-        denominator = latest[total]
-    else:
+
+    label = params.get(
+        "label",
+        " ".join(
+            [
+                version.name,
+                category.name,
+                str(measure),
+            ]
+        ),
+    )
+
+    try:
+        total = params["total"]
+        denominator = latest[0]["measures"][total]
+    except:
         raise InvalidDataException("No total specified")
 
     fraction = float(numerator) / float(denominator)
-    message = f"{fraction:0.1%}"
-    color = params["color"]
-    if not color:
-        color = "yellow" if fraction < 1.0 else "green"
+    message = f"{fraction:.2%}"
 
-    return {"schemaVersion": 1, "label": "progress", "message": message, "color": color}
+    color = params.get("color", "yellow" if fraction < 1.0 else "green")
+
+    return {"schemaVersion": 1, "label": label, "message": message, "color": color}
 
 
 class VersionDataView(APIView):
@@ -178,6 +193,14 @@ class VersionDataView(APIView):
             entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
             entries = get_all_entries(project_slug, version_slug, category_slug)
+        elif mode == "shield":
+            return Response(
+                get_progress_shield(
+                    self.request, project_slug, version_slug, category_slug
+                )
+            )
+        else:
+            raise InvalidDataException(f"Invalid mode specified: {mode}")
 
         response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
@@ -214,6 +237,14 @@ class CategoryDataView(APIView):
             entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
             entries = get_all_entries(project_slug, version_slug, category_slug)
+        elif mode == "shield":
+            return Response(
+                get_progress_shield(
+                    self.request, project_slug, version_slug, category_slug
+                )
+            )
+        else:
+            raise InvalidDataException(f"Invalid mode specified: {mode}")
 
         response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
