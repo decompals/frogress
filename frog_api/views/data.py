@@ -137,6 +137,9 @@ def get_progress_shield(
     return {"schemaVersion": 1, "label": label, "message": message, "color": color}
 
 
+VALID_MODES: set[str] = {"latest", "all", "shield"}
+
+
 class VersionDataView(APIView):
     """
     API endpoint that returns data for overall progress for a version of a project.
@@ -189,6 +192,9 @@ class VersionDataView(APIView):
         category_slug = DEFAULT_CATEGORY_SLUG
 
         mode = self.request.query_params.get("mode", "latest")
+        if mode not in VALID_MODES:
+            raise InvalidDataException(f"Invalid mode specified: {mode}")
+
         if mode == "latest":
             entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
@@ -199,8 +205,6 @@ class VersionDataView(APIView):
                     self.request, project_slug, version_slug, category_slug
                 )
             )
-        else:
-            raise InvalidDataException(f"Invalid mode specified: {mode}")
 
         response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
@@ -233,6 +237,9 @@ class CategoryDataView(APIView):
         """
 
         mode = self.request.query_params.get("mode", "latest")
+        if mode not in VALID_MODES:
+            raise InvalidDataException(f"Invalid mode specified: {mode}")
+
         if mode == "latest":
             entries = get_latest_entry(project_slug, version_slug, category_slug)
         elif mode == "all":
@@ -243,8 +250,6 @@ class CategoryDataView(APIView):
                     self.request, project_slug, version_slug, category_slug
                 )
             )
-        else:
-            raise InvalidDataException(f"Invalid mode specified: {mode}")
 
         response_json = {project_slug: {version_slug: {category_slug: entries}}}
 
