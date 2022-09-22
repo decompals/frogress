@@ -4,6 +4,11 @@ from frog_api.views import data, structure
 urlpatterns = [
     # structure (/project)
     re_path(
+        "projects/(?P<project_slug>.+)/(?P<version_slug>.+)/(?P<category_slug>.+)/$",
+        structure.CategoryStructureView.as_view(),
+        name="category-structure",
+    ),
+    re_path(
         "projects/(?P<project_slug>.+)/(?P<version_slug>.+)/$",
         structure.VersionStructureView.as_view(),
         name="version-structure",
