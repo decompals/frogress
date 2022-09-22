@@ -5,19 +5,11 @@ from rest_framework.test import APITestCase
 from frog_api.models import Category, Entry, Measure, Project, Version
 
 
-class CreateCategoriesTests(APITestCase):
+class CreateCategoryTests(APITestCase):
     def test_create_categories(self) -> None:
         """
         Ensure that the category creation endpoint works
         """
-
-        create_json = {
-            "api_key": "test_key_123",
-            "categories": {
-                "total": "Total",
-                "actors": "Actors",
-            },
-        }
 
         # Create a test Project and Version
         project = Project(slug="oot", name="Ocarina of Time", auth_key="test_key_123")
@@ -27,14 +19,26 @@ class CreateCategoriesTests(APITestCase):
         version.save()
 
         response = self.client.post(
-            reverse("version-structure", args=[project.slug, version.slug]),
-            create_json,
+            reverse("category-structure", args=[project.slug, version.slug, "total"]),
+            {
+                "api_key": "test_key_123",
+                "name": "Total",
+            },
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("category-structure", args=[project.slug, version.slug, "actors"]),
+            {
+                "api_key": "test_key_123",
+                "name": "Actors",
+            },
             format="json",
         )
 
         # Confirm we created the categories and that they are in the DB
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Category.objects.count(), len(create_json["categories"]))
+        self.assertEqual(Category.objects.count(), 2)
 
 
 class CreateEntriesTests(APITestCase):

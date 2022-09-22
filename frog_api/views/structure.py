@@ -1,11 +1,10 @@
 from typing import Any
 
-from django.db import models
 from frog_api.exceptions import AlreadyExistsException
 from frog_api.models import Category, Project, Version
 from frog_api.serializers.model_serializers import ProjectSerializer
 from frog_api.serializers.request_serializers import (
-    CreateCategoriesSerializer,
+    CreateCategorySerializer,
     CreateProjectSerializer,
     CreateVersionSerializer,
 )
@@ -24,19 +23,21 @@ from frog_api.views.data import DEFAULT_CATEGORY_NAME, DEFAULT_CATEGORY_SLUG
 
 
 class RootStructureView(APIView):
-    """
-    API endpoint that allows the structure of the database to be viewed or edited.
-    """
-
-    def get(self, request: Request) -> Response:
+    def get(self, request: Request, format: Any = None) -> Response:
         """
-        Return a digest of the database structure.
+        Get a list of all projects
         """
         projects = Project.objects.all()
         serializer = ProjectSerializer(projects, many=True)
         return Response(serializer.data)
 
-    def post(self, request: Request) -> Response:
+
+class ProjectStructureView(APIView):
+    """
+    API endpoint for modifying projects
+    """
+
+    def post(self, request: Request, project_slug: str) -> Response:
         """
         Create a new project.
         """
@@ -50,54 +51,68 @@ class RootStructureView(APIView):
         return Response(request_ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ProjectStructureView(APIView):
+class VersionStructureView(APIView):
     """
-    API endpoint for adding a new version
+    API endpoint for modifying versions
     """
 
-    def post(self, request: Request, project_slug: str) -> Response:
+    def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
         request_ser = CreateVersionSerializer(data=request.data)
 
         project = get_project(project_slug)
 
+        if not request_ser.is_valid():
+            return Response(request_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
         validate_api_key(request_ser.data["api_key"], project)
 
-        if request_ser.is_valid():
-            if Version.objects.filter(
-                slug=request_ser.data["version"]["slug"], project=project
-            ).exists():
-                raise AlreadyExistsException(
-                    f"Version with slug {request_ser.data['version']['slug']} already exists"
-                )
-
-            version = Version(
-                project=project,
-                slug=request_ser.data["version"]["slug"],
-                name=request_ser.data["version"]["name"],
+        if Version.objects.filter(slug=version_slug, project=project).exists():
+            raise AlreadyExistsException(
+                f"Version {version_slug} already exists in project {project_slug}"
             )
-            version.save()
 
-            # Create the default category
-            default_cat = Category(
-                version=version,
-                slug=DEFAULT_CATEGORY_SLUG,
-                name=DEFAULT_CATEGORY_NAME,
-            )
-            default_cat.save()
-            return Response(request_ser.version.data, status=status.HTTP_201_CREATED)
-        return Response(request_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        version = Version(
+            project=project,
+            slug=version_slug,
+            name=request_ser.data["name"],
+        )
+        version.save()
+
+        # Create the default category
+        default_cat = Category(
+            version=version,
+            slug=DEFAULT_CATEGORY_SLUG,
+            name=DEFAULT_CATEGORY_NAME,
+        )
+        default_cat.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(
+        self, request: Request, project_slug: str, version_slug: str
+    ) -> Response:
+        project = get_project(project_slug)
+
+        validate_api_key(request.data["api_key"], project)
+
+        version = get_version(version_slug, project)
+
+        version.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class VersionStructureView(APIView):
+class CategoryStructureView(APIView):
     """
-    API endpoint for adding new categories
+    API endpoint for modifying categories
     """
 
     @staticmethod
-    def create_categories(
-        req_data: dict[str, Any], project_slug: str, version_slug: str
+    def create_category(
+        req_data: dict[str, Any],
+        project_slug: str,
+        version_slug: str,
+        category_slug: str,
     ) -> int:
-        request_ser = CreateCategoriesSerializer(data=req_data)
+        request_ser = CreateCategorySerializer(data=req_data)
         request_ser.is_valid(raise_exception=True)
         data = request_ser.data
 
@@ -107,29 +122,35 @@ class VersionStructureView(APIView):
 
         version = get_version(version_slug, project)
 
-        categories: dict[str, str] = data["categories"]
+        if Category.objects.filter(slug=category_slug, version=version).exists():
+            raise AlreadyExistsException(
+                f"Category '{category_slug}' already exists for project '{project_slug}', version '{version_slug}'"
+            )
 
-        to_save: list[models.Model] = []
-        for cat, name in categories.items():
-            if Category.objects.filter(slug=cat, version=version).exists():
-                raise AlreadyExistsException(
-                    f"Category '{cat}' already exists for project '{project_slug}', version '{version_slug}'"
-                )
-            to_save.append(Category(version=version, slug=cat, name=name))
+        category = Category(version=version, slug=category_slug, name=data["name"])
+        category.save()
 
-        for s in to_save:
-            s.save()
+        return 1
 
-        return len(to_save)
-
-    def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
-        result = VersionStructureView.create_categories(
-            request.data, project_slug, version_slug
+    def post(
+        self, request: Request, project_slug: str, version_slug: str, category_slug: str
+    ) -> Response:
+        result = CategoryStructureView.create_category(
+            request.data, project_slug, version_slug, category_slug
         )
 
-        success_data = {
-            "result": "success",
-            "wrote": result,
-        }
+        return Response(status=status.HTTP_201_CREATED)
 
-        return Response(success_data, status=status.HTTP_201_CREATED)
+    def delete(
+        self, request: Request, project_slug: str, version_slug: str, category_slug: str
+    ) -> Response:
+        project = get_project(project_slug)
+
+        validate_api_key(request.data["api_key"], project)
+
+        version = get_version(version_slug, project)
+
+        category = Category.objects.get(slug=category_slug, version=version)
+
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

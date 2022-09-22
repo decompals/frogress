@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from frog_api.models import AUTH_KEY_LEN
-from frog_api.serializers.model_serializers import ProjectSerializer, VersionSerializer
+from frog_api.serializers.model_serializers import ProjectSerializer
 
 
 class ApiKeySerializer(serializers.CharField):
@@ -15,7 +15,12 @@ class CreateProjectSerializer(serializers.Serializer):  # type:ignore
 
 class CreateVersionSerializer(serializers.Serializer):  # type:ignore
     api_key = ApiKeySerializer()
-    version = VersionSerializer()
+    name = serializers.CharField()
+
+
+class CreateCategorySerializer(serializers.Serializer):  # type:ignore
+    api_key = ApiKeySerializer()
+    name = serializers.CharField()
 
 
 # Classes for valdating requests to create new entries
@@ -31,11 +36,4 @@ class CreateEntriesSerializer(serializers.Serializer):  # type:ignore
     api_key = ApiKeySerializer()
     entries = serializers.ListField(
         child=CreateEntrySerializer(), required=True, allow_empty=False
-    )
-
-
-class CreateCategoriesSerializer(serializers.Serializer):  # type:ignore
-    api_key = ApiKeySerializer()
-    categories = serializers.DictField(
-        required=True, allow_empty=False, child=serializers.CharField()
     )
