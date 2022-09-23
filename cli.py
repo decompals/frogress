@@ -2,12 +2,29 @@
 
 import argparse
 import configparser
+from typing import Any
 import requests
+import dataclasses
 
 
-def parse_config() -> configparser.SectionProxy:
+def dprint(*args: object, **kwargs: Any) -> None:
+    if CONFIG.verbosity > 0:
+        print(*args, **kwargs)
+
+
+@dataclasses.dataclass
+class Config:
+    domain: str
+    api_key: str
+    verbosity: int = 0
+
+
+CONFIG = Config("", "", False)
+
+
+def parse_config() -> Config:
     config = configparser.ConfigParser()
-    config.read("cli.ini")
+    config.read("cli.ini")  # TODO: think about what to do to get this
 
     if "frogress" not in config.sections():
         raise Exception("Missing [frogress] section in cli.ini")
@@ -18,46 +35,64 @@ def parse_config() -> configparser.SectionProxy:
     if "api_key" not in config["frogress"]:
         raise Exception("Missing api_key in cli.ini")
 
-    if "debug" not in config["frogress"]:
-        config["frogress"]["debug"] = "false"
+    out = Config(
+        domain=str(config["frogress"]["domain"]),
+        api_key=str(config["frogress"]["api_key"]),
+        verbosity=int(config.get("frogress", "verbosity", fallback=0)),
+    )
 
-    return config["frogress"]
+    return out
 
 
-def debug(msg: str) -> None:
-    if dbg:
-        print(msg)
+def process_response(response: requests.Response) -> None:
+    if not response.ok:
+        print(f"error: HTTP status code {response.status_code}")
+    print(response.text)
+    if not response.ok:
+        exit(1)
 
 
 def create_version(args: argparse.Namespace) -> None:
-    url = f"{domain}/projects/{args.project}/{args.slug}/"
+    url = f"{CONFIG.domain}/projects/{args.project}/{args.slug}/"
 
     name = args.name or args.slug
 
     data = {
-        "api_key": api_key,
+        "api_key": CONFIG.api_key,
         "name": name,
     }
 
-    debug("POST " + url)
+    dprint("POST " + url)
 
+    if args.dryrun:
+        print(data)
+        return
     response = requests.post(url, json=data)
-    print(response.text)
+    process_response(response)
 
 
 def delete_version(args: argparse.Namespace) -> None:
-    url = f"{domain}/projects/{args.project}/{args.slug}/"
+    url = f"{CONFIG.domain}/projects/{args.project}/{args.slug}/"
 
-    data = {"api_key": api_key}
+    data = {"api_key": CONFIG.api_key}
 
-    debug("DELETE " + url)
+    dprint("DELETE " + url)
+
+    if args.dryrun:
+        print(data)
+        return
 
     response = requests.delete(url, json=data)
-    print(response.text)
+    process_response(response)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--dryrun",
+        help="Show request but do not actually send it",
+        action="store_true",
+    )
 
     subparsers = parser.add_subparsers(help="the action to perform", required=True)
 
@@ -93,14 +128,12 @@ def main() -> None:
     delete_version_parser.set_defaults(func=delete_version)
 
     args = parser.parse_args()
+
+    global CONFIG
+    CONFIG = parse_config()
+
     args.func(args)
 
-
-config = parse_config()
-
-dbg = bool(config["debug"])
-domain = config["domain"]
-api_key = config["api_key"]
 
 if __name__ == "__main__":
     main()
