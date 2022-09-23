@@ -5,45 +5,6 @@ import configparser
 import requests
 
 
-def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-
-    subparsers = parser.add_subparsers(help="the action to perform", required=True)
-
-    # Create
-    create_parser = subparsers.add_parser("create", help="create a new db object")
-    create_subparsers = create_parser.add_subparsers(
-        help="the db layer on which to operate", required=True
-    )
-    create_version_parser = create_subparsers.add_parser(
-        "version",
-        help="create a new version",
-    )
-    create_version_parser.add_argument(
-        "project", help="the project for which to create the version"
-    )
-    create_version_parser.add_argument("slug", help="the slug for the version")
-    create_version_parser.add_argument("--name", help="the name for the version")
-    create_version_parser.set_defaults(func=create_version)
-
-    # Delete
-    delete_parser = subparsers.add_parser("delete", help="delete a db object")
-    delete_subparsers = delete_parser.add_subparsers(
-        help="the db layer on which to operate", required=True
-    )
-    delete_version_parser = delete_subparsers.add_parser(
-        "version",
-        help="delete a version",
-    )
-    delete_version_parser.add_argument(
-        "project", help="the project for which to delete the version"
-    )
-    delete_version_parser.add_argument("slug", help="the slug for the version")
-    delete_version_parser.set_defaults(func=delete_version)
-
-    return parser
-
-
 def parse_config() -> configparser.SectionProxy:
     config = configparser.ConfigParser()
     config.read("cli.ini")
@@ -95,12 +56,51 @@ def delete_version(args: argparse.Namespace) -> None:
     print(response.text)
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(help="the action to perform", required=True)
+
+    # Create
+    create_parser = subparsers.add_parser("create", help="create a new db object")
+    create_subparsers = create_parser.add_subparsers(
+        help="the db layer on which to operate", required=True
+    )
+    create_version_parser = create_subparsers.add_parser(
+        "version",
+        help="create a new version",
+    )
+    create_version_parser.add_argument(
+        "project", help="the project for which to create the version"
+    )
+    create_version_parser.add_argument("slug", help="the slug for the version")
+    create_version_parser.add_argument("--name", help="the name for the version")
+    create_version_parser.set_defaults(func=create_version)
+
+    # Delete
+    delete_parser = subparsers.add_parser("delete", help="delete a db object")
+    delete_subparsers = delete_parser.add_subparsers(
+        help="the db layer on which to operate", required=True
+    )
+    delete_version_parser = delete_subparsers.add_parser(
+        "version",
+        help="delete a version",
+    )
+    delete_version_parser.add_argument(
+        "project", help="the project for which to delete the version"
+    )
+    delete_version_parser.add_argument("slug", help="the slug for the version")
+    delete_version_parser.set_defaults(func=delete_version)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
 config = parse_config()
 
-dbg = config["debug"]
+dbg = bool(config["debug"])
 domain = config["domain"]
 api_key = config["api_key"]
 
-
-args = get_parser().parse_args()
-args.func(args)
+if __name__ == "__main__":
+    main()
