@@ -2,7 +2,7 @@
 
 import argparse
 import configparser
-from typing import Any
+from typing import Any, Union
 import requests
 import dataclasses
 
@@ -52,12 +52,9 @@ def process_response(response: requests.Response) -> None:
         exit(1)
 
 
-def create_version(args: argparse.Namespace) -> None:
-    url = f"{CONFIG.domain}/projects/{args.project}/{args.slug}/"
-
+def creation(url: str, args: argparse.Namespace) -> Union[requests.Response, None]:
     name = args.name or args.slug
-
-    data = {
+    json = {
         "api_key": CONFIG.api_key,
         "name": name,
     }
@@ -65,25 +62,49 @@ def create_version(args: argparse.Namespace) -> None:
     dprint("POST " + url)
 
     if args.dryrun:
-        print(data)
-        return
-    response = requests.post(url, json=data)
-    process_response(response)
+        print(json)
+        return None
+    else:
+        return requests.post(url, json=json)
+
+
+def create_version(args: argparse.Namespace) -> None:
+    url = f"{CONFIG.domain}/projects/{args.project}/{args.slug}/"
+    response = creation(url, args)
+    if response:
+        process_response(response)
+
+
+def create_category(args: argparse.Namespace) -> None:
+    url = f"{CONFIG.domain}/projects/{args.project}/{args.version}/{args.slug}/"
+    response = creation(url, args)
+    if response:
+        process_response(response)
+
+
+def deletion(url: str, args: argparse.Namespace) -> Union[requests.Response, None]:
+    json = {"api_key": CONFIG.api_key}
+    dprint("DELETE " + url)
+
+    if args.dryrun:
+        print(json)
+        return None
+    else:
+        return requests.delete(url, json=json)
 
 
 def delete_version(args: argparse.Namespace) -> None:
     url = f"{CONFIG.domain}/projects/{args.project}/{args.slug}/"
+    response = deletion(url, args)
+    if response:
+        process_response(response)
 
-    data = {"api_key": CONFIG.api_key}
 
-    dprint("DELETE " + url)
-
-    if args.dryrun:
-        print(data)
-        return
-
-    response = requests.delete(url, json=data)
-    process_response(response)
+def delete_category(args: argparse.Namespace) -> None:
+    url = f"{CONFIG.domain}/projects/{args.project}/{args.version}/{args.slug}/"
+    response = deletion(url, args)
+    if response:
+        process_response(response)
 
 
 def main() -> None:
@@ -101,6 +122,7 @@ def main() -> None:
     create_subparsers = create_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
+    # Version
     create_version_parser = create_subparsers.add_parser(
         "version",
         help="create a new version",
@@ -111,12 +133,27 @@ def main() -> None:
     create_version_parser.add_argument("slug", help="the slug for the version")
     create_version_parser.add_argument("--name", help="the name for the version")
     create_version_parser.set_defaults(func=create_version)
+    # Category
+    create_category_parser = create_subparsers.add_parser(
+        "category",
+        help="create a new category",
+    )
+    create_category_parser.add_argument(
+        "project", help="the project for which to create the category"
+    )
+    create_category_parser.add_argument(
+        "version", help="the version for which to create the category"
+    )
+    create_category_parser.add_argument("slug", help="the slug for the category")
+    create_category_parser.add_argument("--name", help="the name for the category")
+    create_category_parser.set_defaults(func=create_category)
 
     # Delete
     delete_parser = subparsers.add_parser("delete", help="delete a db object")
     delete_subparsers = delete_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
+    # Version
     delete_version_parser = delete_subparsers.add_parser(
         "version",
         help="delete a version",
@@ -126,8 +163,23 @@ def main() -> None:
     )
     delete_version_parser.add_argument("slug", help="the slug for the version")
     delete_version_parser.set_defaults(func=delete_version)
+    # Category
+    delete_category_parser = delete_subparsers.add_parser(
+        "category",
+        help="delete a category",
+    )
+    delete_category_parser.add_argument(
+        "project", help="the project for which to delete the category"
+    )
+    delete_category_parser.add_argument(
+        "version", help="the version for which to delete the category"
+    )
+    delete_category_parser.add_argument("slug", help="the slug for the category")
+    delete_category_parser.set_defaults(func=delete_category)
 
     args = parser.parse_args()
+
+    print(args)
 
     global CONFIG
     CONFIG = parse_config()
