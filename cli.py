@@ -179,7 +179,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    print(args)
+    dprint(args)
 
     global CONFIG
     CONFIG = parse_config()
