@@ -45,10 +45,12 @@ def parse_config() -> Config:
 
 
 def process_response(response: requests.Response) -> None:
-    if not response.ok:
+    if response.ok:
+        dprint(f"Success: HTTP status code {response.status_code}")
+        print(response.text)
+    else:
         print(f"error: HTTP status code {response.status_code}")
-    print(response.text)
-    if not response.ok:
+        print(response.text)
         exit(1)
 
 
@@ -66,6 +68,13 @@ def creation(url: str, args: argparse.Namespace) -> Union[requests.Response, Non
         return None
     else:
         return requests.post(url, json=json)
+
+
+def create_project(args: argparse.Namespace) -> None:
+    url = f"{CONFIG.domain}/projects/{args.slug}/"
+    response = creation(url, args)
+    if response:
+        process_response(response)
 
 
 def create_version(args: argparse.Namespace) -> None:
@@ -91,6 +100,13 @@ def deletion(url: str, args: argparse.Namespace) -> Union[requests.Response, Non
         return None
     else:
         return requests.delete(url, json=json)
+
+
+def delete_project(args: argparse.Namespace) -> None:
+    url = f"{CONFIG.domain}/projects/{args.slug}/"
+    response = deletion(url, args)
+    if response:
+        process_response(response)
 
 
 def delete_version(args: argparse.Namespace) -> None:
@@ -122,7 +138,15 @@ def main() -> None:
     create_subparsers = create_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
-    # Version
+    ## Project
+    create_project_parser = create_subparsers.add_parser(
+        "project",
+        help="create a new project",
+    )
+    create_project_parser.add_argument("slug", help="the slug for the project")
+    create_project_parser.add_argument("--name", help="the name for the project")
+    create_project_parser.set_defaults(func=create_project)
+    ## Version
     create_version_parser = create_subparsers.add_parser(
         "version",
         help="create a new version",
@@ -133,7 +157,7 @@ def main() -> None:
     create_version_parser.add_argument("slug", help="the slug for the version")
     create_version_parser.add_argument("--name", help="the name for the version")
     create_version_parser.set_defaults(func=create_version)
-    # Category
+    ## Category
     create_category_parser = create_subparsers.add_parser(
         "category",
         help="create a new category",
@@ -153,7 +177,14 @@ def main() -> None:
     delete_subparsers = delete_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
-    # Version
+    ## Project
+    delete_project_parser = delete_subparsers.add_parser(
+        "project",
+        help="delete a project",
+    )
+    delete_project_parser.add_argument("slug", help="the slug for the project")
+    delete_project_parser.set_defaults(func=delete_project)
+    ## Version
     delete_version_parser = delete_subparsers.add_parser(
         "version",
         help="delete a version",
@@ -163,7 +194,7 @@ def main() -> None:
     )
     delete_version_parser.add_argument("slug", help="the slug for the version")
     delete_version_parser.set_defaults(func=delete_version)
-    # Category
+    ## Category
     delete_category_parser = delete_subparsers.add_parser(
         "category",
         help="delete a category",
