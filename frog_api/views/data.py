@@ -1,6 +1,8 @@
 from typing import Any
 
 from django.db import models
+from django.template.defaultfilters import title
+
 from frog_api.exceptions import (
     InvalidDataException,
     NoEntriesException,
@@ -96,7 +98,8 @@ class ProjectDataView(APIView):
 def get_progress_shield(
     request: Request, project_slug: str, version_slug: str, category_slug: str
 ) -> dict[str, Any]:
-    latest = get_latest_entry(project_slug, version_slug, "default")
+    latest = get_latest_entry(project_slug, version_slug, category_slug)
+    latest_measures = latest[0]["measures"]
 
     project = get_project(project_slug)
     version = get_version(version_slug, project)
@@ -104,13 +107,15 @@ def get_progress_shield(
 
     params = request.query_params
     if not params:
-        raise InvalidDataException("No measure or total specified")
-
-    try:
-        measure = params["measure"]
-        numerator = latest[0]["measures"][measure]
-    except:
         raise InvalidDataException("No measure specified")
+
+    if "measure" in params:
+        measure = params["measure"]
+    else:
+        raise InvalidDataException("No measure specified")
+    if measure not in latest_measures:
+        raise InvalidDataException(f"Measure '{measure}' not found")
+    numerator = latest_measures[measure]
 
     label = params.get(
         "label",
@@ -118,21 +123,25 @@ def get_progress_shield(
             [
                 version.name,
                 category.name,
-                str(measure),
+                title(str(measure)),
             ]
         ),
     )
 
-    try:
+    if "total" in params:
         total = params["total"]
-        denominator = latest[0]["measures"][total]
-    except:
+    elif f"{measure}/total" in latest_measures:
+        total = f"{measure}/total"
+    else:
         raise InvalidDataException("No total specified")
+    if total not in latest_measures:
+        raise InvalidDataException(f"Measure '{total}' not found")
+    denominator = latest_measures[total]
 
     fraction = float(numerator) / float(denominator)
     message = f"{fraction:.2%}"
 
-    color = params.get("color", "yellow" if fraction < 1.0 else "green")
+    color = params.get("color", "informational" if fraction < 1.0 else "success")
 
     return {"schemaVersion": 1, "label": label, "message": message, "color": color}
 
