@@ -20,18 +20,20 @@ def get_entries_cache(
 
 def set_entries_cache(
     project_slug: str, version_slug: str, category_slug: str, data: ReturnDict
-):
+) -> None:
     """
     Updates cached entries data.
     """
-    return cache.set(
+    cache.set(
         _entries_cache_key(project_slug, version_slug, category_slug),
         data,
         ENTRIES_CACHE_TIMEOUT,
     )
 
 
-def invalidate_entries_cache(project_slug: str, version_slug: str, data: ReturnDict):
+def invalidate_entries_cache(
+    project_slug: str, version_slug: str, data: ReturnDict
+) -> None:
     """
     Invalidates all affected entries caches.
     """
