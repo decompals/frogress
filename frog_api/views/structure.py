@@ -42,6 +42,7 @@ class ProjectStructureView(APIView):
         Create a new project.
         """
         request_ser = CreateProjectSerializer(data=request.data)
+        request_ser.is_valid(raise_exception=True)
 
         validate_ultimate_api_key(request_ser.data["api_key"])
 
@@ -58,11 +59,9 @@ class VersionStructureView(APIView):
 
     def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
         request_ser = CreateVersionSerializer(data=request.data)
+        request_ser.is_valid(raise_exception=True)
 
         project = get_project(project_slug)
-
-        if not request_ser.is_valid():
-            return Response(request_ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
         validate_api_key(request_ser.data["api_key"], project)
 

@@ -3,6 +3,7 @@ from typing import Any
 from django.db import models
 from django.template.defaultfilters import title
 
+from frog_api.cache import invalidate_entries_cache, set_entries_cache, get_entries_cache
 from frog_api.exceptions import (
     InvalidDataException,
     NoEntriesException,
@@ -43,13 +44,19 @@ def get_latest_entry(
 def get_all_entries(
     project_slug: str, version_slug: str, category_slug: str
 ) -> list[dict[str, Any]]:
+    data = get_entries_cache(project_slug, version_slug, category_slug)
+    if data:
+        return data  # type: ignore
+
     project = get_project(project_slug)
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
 
     entries = Entry.objects.filter(category=category)
 
-    return EntrySerializer(entries, many=True).data  # type: ignore
+    data = EntrySerializer(entries, many=True).data
+    set_entries_cache(project_slug, version_slug, category_slug, data)
+    return data  # type: ignore
 
 
 def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
@@ -190,6 +197,8 @@ class VersionDataView(APIView):
 
         for s in to_save:
             s.save()
+
+        invalidate_entries_cache(project_slug, version_slug, data)
 
         return len(to_save)
 
