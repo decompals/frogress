@@ -3,7 +3,11 @@ from typing import Any
 from django.db import models
 from django.template.defaultfilters import title
 
-from frog_api.cache import invalidate_entries_cache, set_entries_cache, get_entries_cache
+from frog_api.cache import (
+    invalidate_entries_cache,
+    set_entries_cache,
+    get_entries_cache,
+)
 from frog_api.exceptions import (
     InvalidDataException,
     NoEntriesException,
@@ -52,7 +56,7 @@ def get_all_entries(
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
 
-    entries = Entry.objects.filter(category=category).prefetch_related('measures')
+    entries = Entry.objects.filter(category=category).prefetch_related("measures")
 
     data = EntrySerializer(entries, many=True).data
     set_entries_cache(project_slug, version_slug, category_slug, data)
