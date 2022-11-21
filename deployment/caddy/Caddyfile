@@ -1,3 +1,0 @@
-__DOMAIN_NAME__ {
-	reverse_proxy __BACKEND_HOST__:__BACKEND_PORT__
-}

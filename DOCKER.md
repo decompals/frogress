@@ -1,16 +1,9 @@
 # Docker
 
-There are 3 images that make up this project:
+There are 2 images that make up this project:
 
 - `frogress` - the app itself, based upon [python:3.10-slim](https://hub.docker.com/_/python) image.
-- `caddy` - [caddy](https://hub.docker.com/_/caddy) running as a reverse proxy that also provides auto-https for production
 - `postgres` - [postgresql](https://hub.docker.com/_/postgres) database
-
-## Production
-
-By default, `PRODUCTION=NO` is set in the `caddy.env` file which means the reverse proxy (Caddy) will listen on port 80/http. Changing this to `PRODUCTION=YES` will cause Caddy to listen on 443/https and will generate SSL certificates and attempt to confirm ownership of the domain (progress.deco.mp).
-
-Note: The production domain can be overridden by setting `DOMAIN_NAME=www.mydomainname.com` environment variable within the `caddy.env`
 
 ## Persisted data
 
@@ -27,7 +20,6 @@ Check what containers are running:
 $ docker-compose ps
        Name                      Command              State                                        Ports                                      
 ----------------------------------------------------------------------------------------------------------------------------------------------
-frogress_caddy_1      /entrypoint.sh                  Up      2019/tcp, 0.0.0.0:443->443/tcp,:::443->443/tcp, 0.0.0.0:80->80/tcp,:::80->80/tcp
 frogress_frogress_1   /entrypoint.sh                  Up      0.0.0.0:8000->8000/tcp,:::8000->8000/tcp                                        
 frogress_postgres_1   docker-entrypoint.sh postgres   Up      0.0.0.0:5432->5432/tcp,:::5432->5432/tcp  
 ```

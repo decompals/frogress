@@ -15,11 +15,3 @@ services:
       dockerfile: deployment/frogress/Dockerfile
     ports:
     - "8000:8000"
-  caddy:
-    env_file: caddy.env
-    build:
-      context: .
-      dockerfile: deployment/caddy/Dockerfile
-    ports:
-    - "80:80"
-    - "443:443"
