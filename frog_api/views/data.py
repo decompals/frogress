@@ -52,7 +52,7 @@ def get_all_entries(
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
 
-    entries = Entry.objects.filter(category=category)
+    entries = Entry.objects.filter(category=category).prefetch_related('measures')
 
     data = EntrySerializer(entries, many=True).data
     set_entries_cache(project_slug, version_slug, category_slug, data)
