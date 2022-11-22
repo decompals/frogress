@@ -6,12 +6,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-    - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_PORT}:5432"
     volumes:
-    - ./deployment/postgres/data:/var/lib/postgresql/data
+      - ./deployment/postgres/data:/var/lib/postgresql/data
   frogress:
     build:
       context: .
       dockerfile: deployment/frogress/Dockerfile
     ports:
     - "${BACKEND_PORT}:${BACKEND_PORT}"
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: 5432
