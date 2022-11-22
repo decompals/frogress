@@ -24,7 +24,7 @@ WORKDIR /frogress
 
 ENV PATH="$PATH:/etc/poetry/bin"
 
-RUN poetry add psycopg2
+RUN poetry add psycopg2-binary
 RUN poetry install
 
 COPY .env /frogress
