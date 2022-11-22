@@ -1,8 +1,8 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y curl netcat
 
-ARG POETRY_VERSION=1.1.15
+ARG POETRY_VERSION=1.2.2
 ENV POETRY_VERSION=${POETRY_VERSION}
 RUN curl -sSL https://install.python-poetry.org | \
     POETRY_VERSION=${POETRY_VERSION} POETRY_HOME=/etc/poetry python -
@@ -27,6 +27,7 @@ ENV PATH="$PATH:/etc/poetry/bin"
 RUN poetry install
 
 COPY .env /frogress
+COPY .env.local /frogress
 
 COPY ./deployment/frogress/entrypoint.sh /entrypoint.sh
 
