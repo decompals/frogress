@@ -1,12 +1,12 @@
 version: '2'
 services:
   postgres:
-    image: postgres:13-alpine
+    image: postgres:15.1-bullseye
     environment:
-      POSTGRES_USER: frogress
-      POSTGRES_PASSWORD: frogress
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-    - "5432:5432"
+    - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
     - ./deployment/postgres/data:/var/lib/postgresql/data
   frogress:
@@ -14,4 +14,4 @@ services:
       context: .
       dockerfile: deployment/frogress/Dockerfile
     ports:
-    - "8000:8000"
+    - "${BACKEND_PORT}:${BACKEND_PORT}"
