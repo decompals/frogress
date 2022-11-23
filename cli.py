@@ -56,6 +56,33 @@ def delete_version(args: argparse.Namespace) -> None:
     print(response.text)
 
 
+def create_category(args: argparse.Namespace) -> None:
+    url = f"{domain}/projects/{args.project}/{args.version}/{args.slug}/"
+
+    name = args.name or args.slug
+
+    data = {
+        "api_key": api_key,
+        "name": name,
+    }
+
+    debug("POST " + url)
+
+    response = requests.post(url, json=data)
+    print(response.text)
+
+
+def delete_category(args: argparse.Namespace) -> None:
+    url = f"{domain}/projects/{args.project}/{args.version}/{args.slug}/"
+
+    data = {"api_key": api_key}
+
+    debug("DELETE " + url)
+
+    response = requests.delete(url, json=data)
+    print(response.text)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
 
@@ -66,6 +93,8 @@ def main() -> None:
     create_subparsers = create_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
+
+    # Create version
     create_version_parser = create_subparsers.add_parser(
         "version",
         help="create a new version",
@@ -77,11 +106,26 @@ def main() -> None:
     create_version_parser.add_argument("--name", help="the name for the version")
     create_version_parser.set_defaults(func=create_version)
 
+    # Create category
+    create_category_parser = create_subparsers.add_parser(
+        "category",
+        help="create a new category",
+    )
+    create_category_parser.add_argument(
+        "project", help="the project for which to create the version"
+    )
+    create_category_parser.add_argument("version", help="the slug for the version")
+    create_category_parser.add_argument("slug", help="the slug for the category")
+    create_category_parser.add_argument("--name", help="the name for the category")
+    create_category_parser.set_defaults(func=create_category)
+
     # Delete
     delete_parser = subparsers.add_parser("delete", help="delete a db object")
     delete_subparsers = delete_parser.add_subparsers(
         help="the db layer on which to operate", required=True
     )
+
+    # Delete version
     delete_version_parser = delete_subparsers.add_parser(
         "version",
         help="delete a version",
@@ -91,6 +135,18 @@ def main() -> None:
     )
     delete_version_parser.add_argument("slug", help="the slug for the version")
     delete_version_parser.set_defaults(func=delete_version)
+
+    # Delete category
+    delete_category_parser = delete_subparsers.add_parser(
+        "category",
+        help="delete a category",
+    )
+    delete_category_parser.add_argument(
+        "project", help="the project for which to delete the version"
+    )
+    delete_category_parser.add_argument("version", help="the slug for the version")
+    delete_category_parser.add_argument("slug", help="the slug for the category")
+    delete_category_parser.set_defaults(func=delete_category)
 
     args = parser.parse_args()
     args.func(args)
