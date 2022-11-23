@@ -7,4 +7,4 @@ done
 
 poetry run python manage.py migrate
 
-poetry run gunicorn frogress.wsgi
+poetry run gunicorn frogress.wsgi -b 0.0.0.0:8000
