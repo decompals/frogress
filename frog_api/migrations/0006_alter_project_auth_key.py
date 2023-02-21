@@ -5,7 +5,6 @@ import frog_api.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("frog_api", "0005_remove_entry_decompiled_bytes_and_more"),
     ]

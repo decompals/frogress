@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("frog_api", "0007_alter_entry_timestamp"),
     ]

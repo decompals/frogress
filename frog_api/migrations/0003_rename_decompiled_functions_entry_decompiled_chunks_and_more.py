@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("frog_api", "0002_remove_entry_version_category_entry_category"),
     ]

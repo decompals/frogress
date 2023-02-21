@@ -7,7 +7,6 @@ import frog_api.models
 
 
 class Migration(migrations.Migration):
-
     replaces = [
         ("frog_api", "0001_initial"),
         ("frog_api", "0002_remove_entry_version_category_entry_category"),

@@ -233,7 +233,6 @@ class VersionDataView(APIView):
         return Response(response_json)
 
     def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
-
         result = VersionDataView.create_entries(
             request.data, project_slug, version_slug
         )
