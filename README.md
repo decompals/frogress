@@ -25,6 +25,7 @@ Data: Structure: [data/](https://progress.deco.mp/data/)
 In order to push data for a project, you will need a site admin to create a project for you in the database and give you the project slug and API key. Please reach out to me on Github, Discord (Ethan#1106), or wherever, if you'd like to use Frogress for your project.
 
 TODO: Setup guide (how to create a schema with cli.py)
+
 TODO: Data push guide (how to write a script to push your progress to the site)
 
 ## Database structure
@@ -61,9 +62,13 @@ Each project contains any number of versions.
 
 ### Category
 
-Each version contains any number of categories. A category can represent anything you want, but the original idea was to allow for categories to represent parts of the project, such as different files being decompiled, different categories of data, etc. It's totally fine to essentially ignore this layer of the schema and use just one category if this extra layer is not necessary for your project. 
+Each version contains any number of categories. A category can represent anything you want, but the original idea was to allow for categories to represent parts of the project, such as different files being decompiled, different categories of data, etc. The reason we added this layer is that there are arguably different kinds of metrics one may track for different aspects of a project. 
 
-`slug`: A slug for the version ("default", "map", "actors", "assets")
+As an example, you could have a "documentation" category in which you estimate documentation % and track it in frogress. The documentation progress doesn't really align with the decompilation progress, so it makes sense to put it in a totally different bucket and have different entries associated with it.
+
+If this extra layer isn't necessary for your project, feel free to just use one category.
+
+`slug`: A slug for the category ("default", "actors", "documentation")
 
 `name`: Human-friendly name
 
