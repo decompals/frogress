@@ -10,6 +10,8 @@ services:
     volumes:
       - ./deployment/postgres/data:/var/lib/postgresql/data
   frogress:
+    depends_on:
+      - postgres
     build:
       context: .
       dockerfile: deployment/frogress/Dockerfile
