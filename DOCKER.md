@@ -5,6 +5,17 @@ There are 2 images that make up this project:
 - `frogress` - the app itself, based upon [python:3.10-slim](https://hub.docker.com/_/python) image.
 - `postgres` - [postgresql](https://hub.docker.com/_/postgres) database
 
+## Configuration
+
+The following environment variables in `.env` are required to run the services via docker-compose:
+
+- `POSTGRES_USER` self-explanatory. Can be set to `user`.
+- `POSTGRES_PASSWORD` self-explanatory. Can be set to `pass`.
+- `POSTGRES_PORT` to connect to postgres externally. Can be set to `5432`.
+- `BACKEND_PORT` the port to access the service to. Can be set to `9000`.
+
+With the above configuration, you will be able to use the API via `http://localhost:9000`. You can also connect to postgres via `localhost:5432`.
+
 ## Persisted data
 
 The database data is persisted to `./deployment/postgres/data`, this can be changed within the `docker-compose.yaml` file.
