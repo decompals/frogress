@@ -10,11 +10,13 @@ services:
     volumes:
       - ./deployment/postgres/data:/var/lib/postgresql/data
   frogress:
+    depends_on:
+      - postgres
     build:
       context: .
       dockerfile: deployment/frogress/Dockerfile
     ports:
-    - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "${BACKEND_PORT}:8000"
     environment:
-      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
