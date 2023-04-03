@@ -83,6 +83,93 @@ def delete_category(args: argparse.Namespace) -> None:
     print(response.text)
 
 
+def prune_entries(args: argparse.Namespace) -> None:
+    # Get entries
+
+    url = f"{domain}/data/{args.project}/{args.version}?mode=all"
+
+    debug("GET " + url)
+
+    response = requests.get(url)
+    print(response.text)
+
+    categories = response.json().get(args.project, {}).get(args.version, {})
+
+    if len(categories) == 0:
+        return
+
+    # Filter entries
+
+    filtered = {}
+
+    for category, entries in categories.items():
+        if len(entries) == 0:
+            continue
+        for entry in entries:
+            if entry["git_hash"] not in filtered:
+                filtered[entry["git_hash"]] = {
+                    "git_hash": entry["git_hash"],
+                    "timestamp": entry["timestamp"],
+                    "categories": {},
+                }
+            if category not in filtered[entry["git_hash"]]["categories"]:
+                filtered[entry["git_hash"]]["categories"][category] = entry["measures"]
+            else:
+                for measure, value in entry["measures"].items():
+                    if (
+                        measure
+                        not in filtered[entry["git_hash"]]["categories"][category]
+                    ):
+                        filtered[entry["git_hash"]]["categories"][category][
+                            measure
+                        ] = value
+
+    entries = list(filtered.values())
+
+    # Clear entries
+
+    for category in categories.keys():
+        # Delete categories
+
+        url = f"{domain}/projects/{args.project}/{args.version}/{category}/"
+
+        data = {"api_key": api_key}
+
+        debug("DELETE " + url)
+
+        response = requests.delete(url, json=data)
+        print(response.text)
+
+        # Recreate categories
+
+        data["name"] = category
+
+        debug("POST " + url)
+
+        response = requests.post(url, json=data)
+        print(response.text)
+
+    # Upload entries
+
+    url = f"{domain}/data/{args.project}/{args.version}/"
+
+    data = {"api_key": api_key, "entries": entries}
+
+    debug("POST " + url)
+
+    response = requests.post(url, json=data)
+    print(response.status_code, response.text)
+
+    # Check entries
+
+    url = f"{domain}/data/{args.project}/{args.version}?mode=all"
+
+    debug("GET " + url)
+
+    response = requests.get(url)
+    print(response.text)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
 
@@ -147,6 +234,17 @@ def main() -> None:
     delete_category_parser.add_argument("version", help="the slug for the version")
     delete_category_parser.add_argument("slug", help="the slug for the category")
     delete_category_parser.set_defaults(func=delete_category)
+
+    # Prune entries
+    prune_parser = subparsers.add_parser(
+        "prune",
+        help="prune entries to remove duplicates",
+    )
+    prune_parser.add_argument(
+        "project", help="the project for which to prune duplicated entries"
+    )
+    prune_parser.add_argument("version", help="the slug for the version")
+    prune_parser.set_defaults(func=prune_entries)
 
     args = parser.parse_args()
     args.func(args)
