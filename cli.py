@@ -238,10 +238,10 @@ def main() -> None:
     # Prune entries
     prune_parser = subparsers.add_parser(
         "prune",
-        help="prune duplicate entries",
+        help="prune entries to remove duplicates",
     )
     prune_parser.add_argument(
-        "project", help="the project for which to prune the entries"
+        "project", help="the project for which to prune duplicated entries"
     )
     prune_parser.add_argument("version", help="the slug for the version")
     prune_parser.set_defaults(func=prune_entries)
