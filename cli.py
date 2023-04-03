@@ -97,11 +97,11 @@ def prune_entries(args: argparse.Namespace) -> None:
 
     if len(categories) == 0:
         return
-    
+
     # Filter entries
-    
+
     filtered = {}
-    
+
     for category, entries in categories.items():
         if len(entries) == 0:
             continue
@@ -116,12 +116,15 @@ def prune_entries(args: argparse.Namespace) -> None:
                 filtered[entry["git_hash"]]["categories"][category] = entry["measures"]
             else:
                 for measure, value in entry["measures"].items():
-                    if measure not in filtered[entry["git_hash"]]["categories"][category]:
-                        filtered[entry["git_hash"]]["categories"][category][measure] = value
+                    if (
+                        measure
+                        not in filtered[entry["git_hash"]]["categories"][category]
+                    ):
+                        filtered[entry["git_hash"]]["categories"][category][
+                            measure
+                        ] = value
 
     entries = list(filtered.values())
-
-    print(entries)
 
     # Clear entries
 
