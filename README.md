@@ -24,9 +24,7 @@ Data: Structure: [data/](https://progress.deco.mp/data/)
 
 In order to push data for a project, you will need a site admin to create a project for you in the database and give you the project slug and API key. Please reach out to me on Github, Discord (Ethan#1106), or wherever, if you'd like to use Frogress for your project.
 
-TODO: Setup guide (how to create a schema with cli.py)
-
-TODO: Data push guide (how to write a script to push your progress to the site)
+Read [User Guide](GUIDE.md) to learn more.
 
 ## Database structure
 
