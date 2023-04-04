@@ -92,15 +92,19 @@ sequenceDiagram
 
 4. Supplement historical data (optional)
 
-Calculate progress for historical commits and upload it to Frogress if you would like to draw historical curve.
+    Calculate progress for historical commits and upload it to Frogress if you would like to draw historical curve.
 
-[Example](https://github.com/laqieer/fireemblem8u/blob/master/.github/workflows/supplement-progress.yml)
+    [Example](https://github.com/laqieer/fireemblem8u/blob/master/.github/workflows/supplement-progress.yml)
 
 5. Prune duplicated data (optional)
 
-    https://github.com/decompals/frogress/issues/27
+    Background: https://github.com/decompals/frogress/issues/27
+  
     ```
-    ./cli.py prune project version
+    # Usage
+    ./cli.py prune -h
+    # Example
+    ./cli.py prune fireemblem8 us
     ```
 
 6. Build a website
