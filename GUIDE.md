@@ -2,6 +2,8 @@
 
 ## Overview
 
+It will guide you to onboard your decomp project to Frogress.
+
 ### Concepts
 
 - **Contributor**: who submits code to the repo
@@ -113,10 +115,10 @@ Calculate progress for historical commits and upload it to Frogress if you would
 
     6.2 Examples
 
-      - https://laqieer.github.io/fe-decomp-portal
       - https://zelda.deco.mp
       - https://pikmin.dev
       - https://axiodl.com
-      - https://angheloalf.github.io/drmario64/
       - https://sotn.xee.dev/
-      - https://angheloalf.github.io/puzzleleague64/
+      - https://laqieer.github.io/fe-decomp-portal
+      - https://angheloalf.github.io/drmario64
+      - https://angheloalf.github.io/puzzleleague64
