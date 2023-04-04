@@ -4,20 +4,11 @@
 
 It will guide you to onboard your decomp project to Frogress.
 
-### Concepts
-
-- **Contributor**: who submits code to the repo
-- **Monitor**: usually a website to show progress
-- **CI**: Continuous Integration services including GitHub Actions, Gitlab pipelines, Travis CI and Jenkins
-- **Frogress**: this project
-
-### Workflow
-
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Contributor
-    actor Monitor
+    actor Contributor as Project contributor
+    actor Monitor as Spectator
     Contributor->>+CI: Trigger
     CI->>CI: Build
     CI->>CI: Calculate progress
@@ -28,6 +19,8 @@ sequenceDiagram
     Frogress->>Monitor: Return progress
     Monitor->>Monitor: Render progress
 ```
+
+*CI: Continuous Integration services including GitHub Actions, Gitlab pipelines, Travis CI and Jenkins.*
 
 ## Steps
 
@@ -107,7 +100,7 @@ sequenceDiagram
     ./cli.py prune fireemblem8 us
     ```
 
-6. Build a website
+6. Fetch project data
 
     6.1 API
 
@@ -117,9 +110,10 @@ sequenceDiagram
 
     https://progress.deco.mp/data/fireemblem8/us/?mode=all
 
-    6.2 Examples
+    6.2 Build a website
 
-      - https://zelda.deco.mp
+    Build a website to render progress graph using a library such as [uPlot](https://github.com/leeoniya/uPlot) and [Chart.js](https://www.chartjs.org).
+
       - https://pikmin.dev
       - https://axiodl.com
       - https://sotn.xee.dev/
