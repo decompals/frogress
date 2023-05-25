@@ -42,4 +42,5 @@ class EntrySerializer(serializers.HyperlinkedModelSerializer):
             "timestamp",
             "git_hash",
             "measures",
+            "description",
         ]

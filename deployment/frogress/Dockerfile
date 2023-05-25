@@ -11,7 +11,6 @@ RUN echo 'export PATH="/etc/poetry/bin:$PATH"' > /root/.bashrc
 
 RUN mkdir /frogress
 
-COPY consumer_scripts /frogress/consumer_scripts
 COPY frog_api /frogress/frog_api
 COPY frogress /frogress/frogress
 
