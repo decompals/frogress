@@ -13,7 +13,13 @@ from frog_api.cache import (
     invalidate_entries_cache,
     set_entries_cache,
 )
-from frog_api.exceptions import InvalidDataException, NoEntriesException
+from frog_api.exceptions import (
+    InvalidDataException,
+    EmptyCategoryException,
+    NonexistentCategoryException,
+    NonexistentProjectException,
+    NonexistentVersionException,
+)
 from frog_api.models import Category, Entry, Measure, Project, Version
 from frog_api.serializers.model_serializers import EntrySerializer
 from frog_api.serializers.request_serializers import CreateEntriesSerializer
@@ -40,15 +46,6 @@ def get_latest_entry(
         return None
 
     return EntrySerializer(entry).data
-
-
-def get_latest_entry_throw(
-    project_slug: str, version_slug: str, category_slug: str
-) -> EntryT:
-    entry = get_latest_entry(project_slug, version_slug, category_slug)
-    if entry is None:
-        raise NoEntriesException(project_slug, version_slug, category_slug)
-    return entry
 
 
 def get_all_entries(
@@ -121,9 +118,10 @@ class ProjectDataView(APIView):
 def get_progress_shield(
     request: Request, project_slug: str, version_slug: str, category_slug: str
 ) -> dict[str, Any]:
-    latest = get_latest_entry_throw(project_slug, version_slug, category_slug)
+    latest = get_latest_entry(project_slug, version_slug, category_slug)
 
-    assert latest is not None
+    if latest is None:
+        raise EmptyCategoryException(project_slug, version_slug, category_slug)
 
     latest_measures = latest["measures"]
 
@@ -191,11 +189,17 @@ class VersionDataView(APIView):
         request_ser.is_valid(raise_exception=True)
         data = request_ser.data
 
-        project = get_project(project_slug)
+        try:
+            project = get_project(project_slug)
+        except NonexistentProjectException:
+            raise InvalidDataException(f"Project '{project_slug}' does not exist")
 
         validate_api_key(data["api_key"], project)
 
-        version = get_version(version_slug, project)
+        try:
+            version = get_version(version_slug, project)
+        except NonexistentVersionException:
+            raise InvalidDataException(f"Version '{version_slug}' does not exist")
 
         to_save: list[models.Model] = []
         for entry in data["entries"]:
@@ -203,7 +207,10 @@ class VersionDataView(APIView):
             git_hash = entry["git_hash"]
             categories = entry["categories"]
             for cat in categories:
-                category = get_category(cat, version)
+                try:
+                    category = get_category(cat, version)
+                except NonexistentCategoryException:
+                    raise InvalidDataException(f"Category '{cat}' does not exist")
 
                 entry = Entry(category=category, timestamp=timestamp, git_hash=git_hash)
 
@@ -300,9 +307,8 @@ class CategoryDataView(APIView):
 
         match mode:
             case Mode.LATEST:
-                entries = [
-                    get_latest_entry_throw(project_slug, version_slug, category_slug)
-                ]
+                entry = get_latest_entry(project_slug, version_slug, category_slug)
+                entries = [entry] if entry is not None else []
                 response_json = {project_slug: {version_slug: {category_slug: entries}}}
                 return Response(response_json)
             case Mode.ALL:
