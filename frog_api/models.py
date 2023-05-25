@@ -73,6 +73,7 @@ class Entry(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     timestamp = models.IntegerField()
     git_hash = models.CharField(max_length=40)
+    description = models.TextField(blank=True)
 
     class Meta:
         verbose_name_plural = "Entries"
