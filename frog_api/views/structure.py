@@ -19,8 +19,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from frog_api.views.data import DEFAULT_CATEGORY_NAME, DEFAULT_CATEGORY_SLUG
-
 
 class RootStructureView(APIView):
     def get(self, request: Request, format: Any = None) -> Response:
@@ -76,14 +74,6 @@ class VersionStructureView(APIView):
             name=request_ser.data["name"],
         )
         version.save()
-
-        # Create the default category
-        default_cat = Category(
-            version=version,
-            slug=DEFAULT_CATEGORY_SLUG,
-            name=DEFAULT_CATEGORY_NAME,
-        )
-        default_cat.save()
         return Response(status=status.HTTP_201_CREATED)
 
     def delete(

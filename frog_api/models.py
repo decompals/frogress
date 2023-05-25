@@ -77,6 +77,11 @@ class Entry(models.Model):
     class Meta:
         verbose_name_plural = "Entries"
         ordering = ["-timestamp"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["timestamp", "git_hash", "category"], name="unique entry"
+            )
+        ]
 
     def __str__(self) -> str:
         time_string = datetime.utcfromtimestamp(self.timestamp).strftime(

@@ -1,8 +1,8 @@
-# Guide on how to monitor decomp progress using Frogress
+# Guide on how to monitor decomp progress using frogress
 
 ## Overview
 
-It will guide you to onboard your decomp project to Frogress.
+This guide will provide a flow for how to use frogress for your project.
 
 ```mermaid
 sequenceDiagram
@@ -12,11 +12,11 @@ sequenceDiagram
     Contributor->>+CI: Trigger
     CI->>CI: Build
     CI->>CI: Calculate progress
-    CI->>-Frogress: Upload progress
-    Note over CI,Frogress: POST /data/project:/version:/
-    Monitor->>Frogress: Fetch progress
-    Note over Monitor,Frogress: GET /data/project:/version:/?mode=all
-    Frogress->>Monitor: Return progress
+    CI->>-frogress: Upload progress
+    Note over CI,frogress: POST /data/project:/version:/
+    Monitor->>frogress: Fetch progress
+    Note over Monitor,frogress: GET /data/project:/version:/?mode=all
+    frogress->>Monitor: Return progress
     Monitor->>Monitor: Render progress
 ```
 
@@ -24,7 +24,7 @@ sequenceDiagram
 
 ## Steps
 
-1. Contact Frogress admin to create project and assign api_key
+1. Contact frogress admin (Ethan) to add your project to the database and obtain an api_key
 
 2. Create schema with `cli.py`
 
@@ -45,9 +45,7 @@ sequenceDiagram
     ./cli.py create version fireemblem8 us
     ```
     
-    2.3 Create category (optional)
-    
-    Default category: `default`
+    2.3 Create category
 
     ```bash
     # Usage
@@ -56,14 +54,14 @@ sequenceDiagram
     ./cli.py create category fireemblem8 us default
     ```
 
-3. Upload progress in CI
+3. Configure CI to upload data on build
 
     3.1 API
     
     ```
     POST https://progress.deco.mp/data/project:/version:/
     ```
-    
+
     ```python
     {
         "api_key": "",
@@ -80,39 +78,47 @@ sequenceDiagram
     ```
 
     3.2 Example
-    
+
     https://github.com/FireEmblemUniverse/fireemblem8u/pull/307
 
-4. Supplement historical data (optional)
+4. Supplement historical data (optional, one-time)
 
-    Calculate progress for historical commits and upload it to Frogress if you would like to draw historical curve.
+    Calculate progress for historical commits and upload it to frogress for the purpose of visualizing and tracking historical data
 
     [Example](https://github.com/laqieer/fireemblem8u/blob/master/.github/workflows/supplement-progress.yml)
 
-5. Prune duplicated data (optional)
+5. Fetch project data
 
-    Background: https://github.com/decompals/frogress/issues/27
-  
-    ```
-    # Usage
-    ./cli.py prune -h
-    # Example
-    ./cli.py prune fireemblem8 us
-    ```
+    5.1 API
 
-6. Fetch project data
-
-    6.1 API
+    There are 3 "modes" for returning results: `all`, `latest`, and `shield`. The first two are pretty self explanatory, and `shield` can be used to generate badges for your repo's README.md (shields.io).
 
     ```
     GET https://progress.deco.mp/data/project:/version:/?mode=all
     ```
+    ```
+    GET https://progress.deco.mp/data/project:/version:/?mode=latest
+    ```
+    Note that the category and measure are required for mode `shield`.
+    ```
+    GET https://progress.deco.mp/data/project:/version:/category:/?mode=shield&measure=MEASURE
+    ```
 
-    https://progress.deco.mp/data/fireemblem8/us/?mode=all
+    **Note:** Specifying a category in the request URL is optional for `all` and `latest` modes. If the category is not specified, results from all categories will be returned. However, for `shield`, it is necessary to specify the category and measure in the request url, as shown above.
 
-    6.2 Build a website
+    `all` example:
 
-    Build a website to render progress graph using a library such as [uPlot](https://github.com/leeoniya/uPlot) and [Chart.js](https://www.chartjs.org).
+    `https://progress.deco.mp/data/fireemblem8/us/?mode=all`
+
+    `shield` example:
+
+    `https://progress.deco.mp/data/dukezh/us/default/?mode=shield&measure=bytes`
+
+    5.2 Build a website
+
+    Build a website to display your progress!
+
+    You can use the "latest" mode to retrieve just the latest datapoint or render full graphs using a library such as [uPlot](https://github.com/leeoniya/uPlot) or [Chart.js](https://www.chartjs.org)
 
       - https://pikmin.dev
       - https://axiodl.com

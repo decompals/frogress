@@ -1,7 +1,7 @@
 # Contributing
 
 ## Dependencies
-- Python >=3.9
+- Python >=3.10
 - [Poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
 
 ## Setup
