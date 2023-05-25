@@ -1,18 +1,20 @@
-from typing import Any
+from enum import Enum
+from typing import Any, Optional
 
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.template.defaultfilters import title
+from rest_framework import status
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from frog_api.cache import (
+    get_entries_cache,
     invalidate_entries_cache,
     set_entries_cache,
-    get_entries_cache,
 )
-from frog_api.exceptions import (
-    InvalidDataException,
-    NoEntriesException,
-)
-from frog_api.models import Entry, Measure, Project, Version
+from frog_api.exceptions import InvalidDataException, NoEntriesException
+from frog_api.models import Category, Entry, Measure, Project, Version
 from frog_api.serializers.model_serializers import EntrySerializer
 from frog_api.serializers.request_serializers import CreateEntriesSerializer
 from frog_api.views.common import (
@@ -21,18 +23,13 @@ from frog_api.views.common import (
     get_version,
     validate_api_key,
 )
-from rest_framework import status
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-DEFAULT_CATEGORY_SLUG = "default"
-DEFAULT_CATEGORY_NAME = "Default"
+EntryT = dict[str, Any]
 
 
 def get_latest_entry(
     project_slug: str, version_slug: str, category_slug: str
-) -> list[dict[str, Any]]:
+) -> Optional[EntryT]:
     project = get_project(project_slug)
     version = get_version(version_slug, project)
     category = get_category(category_slug, version)
@@ -40,14 +37,23 @@ def get_latest_entry(
     entry = Entry.objects.filter(category=category).first()
 
     if entry is None:
-        raise NoEntriesException(project_slug, version_slug, category_slug)
+        return None
 
-    return [EntrySerializer(entry).data]
+    return EntrySerializer(entry).data
+
+
+def get_latest_entry_throw(
+    project_slug: str, version_slug: str, category_slug: str
+) -> EntryT:
+    entry = get_latest_entry(project_slug, version_slug, category_slug)
+    if entry is None:
+        raise NoEntriesException(project_slug, version_slug, category_slug)
+    return entry
 
 
 def get_all_entries(
     project_slug: str, version_slug: str, category_slug: str
-) -> list[dict[str, Any]]:
+) -> list[EntryT]:
     data = get_entries_cache(project_slug, version_slug, category_slug)
     if data:
         return data  # type: ignore
@@ -66,10 +72,16 @@ def get_all_entries(
 def get_versions_digest_for_project(project: Project) -> dict[Any, Any]:
     versions = {}
     for version in Version.objects.filter(project=project):
-        category_slug = DEFAULT_CATEGORY_SLUG
-        entry = get_latest_entry(project.slug, version.slug, category_slug)
-        if entry is not None:
-            versions[version.slug] = {"default": entry}
+        category_entries: dict[str, list[EntryT]] = {}
+
+        for category in Category.objects.filter(version=version):
+            entry = get_latest_entry(project.slug, version.slug, category.slug)
+            if entry is not None:
+                category_entries[category.slug] = [entry]
+
+        if len(category_entries) > 0:
+            versions[version.slug] = category_entries
+
     return versions
 
 
@@ -109,8 +121,11 @@ class ProjectDataView(APIView):
 def get_progress_shield(
     request: Request, project_slug: str, version_slug: str, category_slug: str
 ) -> dict[str, Any]:
-    latest = get_latest_entry(project_slug, version_slug, category_slug)
-    latest_measures = latest[0]["measures"]
+    latest = get_latest_entry_throw(project_slug, version_slug, category_slug)
+
+    assert latest is not None
+
+    latest_measures = latest["measures"]
 
     project = get_project(project_slug)
     version = get_version(version_slug, project)
@@ -157,7 +172,10 @@ def get_progress_shield(
     return {"schemaVersion": 1, "label": label, "message": message, "color": color}
 
 
-VALID_MODES: set[str] = {"latest", "all", "shield"}
+class Mode(Enum):
+    LATEST = "latest"
+    ALL = "all"
+    SHIELD = "shield"
 
 
 class VersionDataView(APIView):
@@ -195,12 +213,16 @@ class VersionDataView(APIView):
                     value = categories[cat][measure_type]
                     if type(value) != int:
                         raise InvalidDataException(
-                            f"{cat}:{measure_type} must be an integer"
+                            f"{cat}:{measure_type} must be an integer, not {type(value): {value}}"
                         )
                     to_save.append(Measure(entry=entry, type=measure_type, value=value))
 
-        for s in to_save:
-            s.save()
+        try:
+            with transaction.atomic():
+                for s in to_save:
+                    s.save()
+        except IntegrityError as e:
+            raise InvalidDataException(f"Integrity error: {e}")
 
         invalidate_entries_cache(project_slug, version_slug, data)
 
@@ -211,26 +233,38 @@ class VersionDataView(APIView):
         Return the most recent entry for overall progress for a version of a project.
         """
 
-        category_slug = DEFAULT_CATEGORY_SLUG
+        mode_str = self.request.query_params.get("mode", Mode.LATEST.value)
 
-        mode = self.request.query_params.get("mode", "latest")
-        if mode not in VALID_MODES:
-            raise InvalidDataException(f"Invalid mode specified: {mode}")
+        try:
+            mode: Mode = Mode(mode_str)
+        except ValueError:
+            raise InvalidDataException(f"Invalid mode specified: {mode_str}")
 
-        if mode == "latest":
-            entries = get_latest_entry(project_slug, version_slug, category_slug)
-        elif mode == "all":
-            entries = get_all_entries(project_slug, version_slug, category_slug)
-        elif mode == "shield":
-            return Response(
-                get_progress_shield(
-                    self.request, project_slug, version_slug, category_slug
+        project = get_project(project_slug)
+        version = get_version(version_slug, project)
+
+        categories_data: dict[str, list[EntryT]]
+
+        match mode:
+            case Mode.LATEST:
+                categories_data = {}
+                for category in Category.objects.filter(version=version):
+                    entry = get_latest_entry(project_slug, version_slug, category.slug)
+                    if entry is not None:
+                        categories_data[category.slug] = [entry]
+                response_json = {project_slug: {version_slug: categories_data}}
+                return Response(response_json)
+            case Mode.ALL:
+                categories_data = {}
+                for category in Category.objects.filter(version=version):
+                    entries = get_all_entries(project_slug, version_slug, category.slug)
+                    categories_data[category.slug] = entries
+                response_json = {project_slug: {version_slug: categories_data}}
+                return Response(response_json)
+            case Mode.SHIELD:
+                raise InvalidDataException(
+                    "Category must be specified for shield output"
                 )
-            )
-
-        response_json = {project_slug: {version_slug: {category_slug: entries}}}
-
-        return Response(response_json)
 
     def post(self, request: Request, project_slug: str, version_slug: str) -> Response:
         result = VersionDataView.create_entries(
@@ -257,21 +291,27 @@ class CategoryDataView(APIView):
         Return data for a specific category and a version of a project.
         """
 
-        mode = self.request.query_params.get("mode", "latest")
-        if mode not in VALID_MODES:
-            raise InvalidDataException(f"Invalid mode specified: {mode}")
+        mode_str = self.request.query_params.get("mode", Mode.LATEST.value)
 
-        if mode == "latest":
-            entries = get_latest_entry(project_slug, version_slug, category_slug)
-        elif mode == "all":
-            entries = get_all_entries(project_slug, version_slug, category_slug)
-        elif mode == "shield":
-            return Response(
-                get_progress_shield(
-                    self.request, project_slug, version_slug, category_slug
+        try:
+            mode: Mode = Mode(mode_str)
+        except ValueError:
+            raise InvalidDataException(f"Invalid mode specified: {mode_str}")
+
+        match mode:
+            case Mode.LATEST:
+                entries = [
+                    get_latest_entry_throw(project_slug, version_slug, category_slug)
+                ]
+                response_json = {project_slug: {version_slug: {category_slug: entries}}}
+                return Response(response_json)
+            case Mode.ALL:
+                entries = get_all_entries(project_slug, version_slug, category_slug)
+                response_json = {project_slug: {version_slug: {category_slug: entries}}}
+                return Response(response_json)
+            case Mode.SHIELD:
+                return Response(
+                    get_progress_shield(
+                        self.request, project_slug, version_slug, category_slug
+                    )
                 )
-            )
-
-        response_json = {project_slug: {version_slug: {category_slug: entries}}}
-
-        return Response(response_json)

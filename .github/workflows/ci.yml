@@ -5,14 +5,14 @@ on:
       - main
   pull_request:
 jobs:
-  full_test_and_build:
-    name: unit tests
+  tests:
+    name: tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: '3.10'
       - uses: snok/install-poetry@v1
       - run: poetry install
       - name: Run backend tests
@@ -22,10 +22,10 @@ jobs:
     name: mypy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: '3.10'
       - uses: snok/install-poetry@v1
       - run: |-
           poetry install
@@ -34,7 +34,11 @@ jobs:
     name: black
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: psf/black@stable
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          src: "."
+          python-version: '3.10'
+      - uses: snok/install-poetry@v1
+      - run: |-
+          poetry install
+          poetry run black . --check
