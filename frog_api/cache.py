@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from django.core.cache import cache
 from rest_framework.utils.serializer_helpers import ReturnDict
 
@@ -11,7 +11,7 @@ def _entries_cache_key(project_slug: str, version_slug: str, category_slug: str)
 
 def get_entries_cache(
     project_slug: str, version_slug: str, category_slug: str
-) -> Optional[ReturnDict]:
+) -> Optional[ReturnDict[str, Any]]:
     """
     Fetches cached entries data.
     """
@@ -19,7 +19,7 @@ def get_entries_cache(
 
 
 def set_entries_cache(
-    project_slug: str, version_slug: str, category_slug: str, data: ReturnDict
+    project_slug: str, version_slug: str, category_slug: str, data: ReturnDict[str, Any]
 ) -> None:
     """
     Updates cached entries data.
@@ -32,7 +32,7 @@ def set_entries_cache(
 
 
 def invalidate_entries_cache(
-    project_slug: str, version_slug: str, data: ReturnDict
+    project_slug: str, version_slug: str, data: ReturnDict[str, Any]
 ) -> None:
     """
     Invalidates all affected entries caches.
