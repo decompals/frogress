@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y curl netcat
 
-ARG POETRY_VERSION=1.2.2
+ARG POETRY_VERSION=1.7.1
 ENV POETRY_VERSION=${POETRY_VERSION}
 RUN curl -sSL https://install.python-poetry.org | \
     POETRY_VERSION=${POETRY_VERSION} POETRY_HOME=/etc/poetry python -
